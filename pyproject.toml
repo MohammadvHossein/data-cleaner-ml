@@ -1,16 +1,17 @@
 [build-system]
 requires = ["setuptools>=64", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "data_cleaner"
-version = "1.1.0"
+version = "1.2.0"
 description = "Automatic data cleaning and standardization for ML pipelines"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
+keywords = ["data-cleaning", "data-preprocessing", "ml-pipeline", "feature-engineering", "scikit-learn"]
 authors = [
-    {name = "Mohammad Hossein Habibpour"},
+    {name = "Mohammad Hossein Habibpour", email = "habibpour.programming@gmail.com"},
 ]
 
 dependencies = [
@@ -33,10 +34,18 @@ all = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "flake8>=6.0",
+    "black>=23.0",
+    "isort>=5.0",
+    "pre-commit>=3.0",
 ]
 
-[project.classifiers]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -46,7 +55,17 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Typing :: Typed",
 ]
+
+[project.urls]
+Homepage = "https://github.com/MohammadvHossein/data_cleaner"
+Repository = "https://github.com/MohammadvHossein/data_cleaner"
+"Bug Tracker" = "https://github.com/MohammadvHossein/data_cleaner/issues"
+Changelog = "https://github.com/MohammadvHossein/data_cleaner/releases"
+
+[project.scripts]
+data-cleaner = "data_cleaner.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["data_cleaner*"]

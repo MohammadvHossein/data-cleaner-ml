@@ -1,10 +1,22 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
+with open("README.md", encoding="utf-8") as f:
+    long_description = f.read()
 
 setup(
     name="data_cleaner",
-    version="1.1.0",
+    version="1.2.0",
     description="Automatic data cleaning and standardization for ML pipelines",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author="Mohammad Hossein Habibpour",
+    author_email="habibpour.programming@gmail.com",
+    url="https://github.com/MohammadvHossein/data_cleaner",
+    project_urls={
+        "Homepage": "https://github.com/MohammadvHossein/data_cleaner",
+        "Repository": "https://github.com/MohammadvHossein/data_cleaner",
+        "Bug Tracker": "https://github.com/MohammadvHossein/data_cleaner/issues",
+    },
     packages=find_packages(),
     install_requires=[
         "pandas>=1.3.0",
@@ -21,6 +33,11 @@ setup(
     },
     python_requires=">=3.8",
     classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Software Development :: Libraries :: Python Modules",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -30,5 +47,6 @@ setup(
         "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
+        "Typing :: Typed",
     ],
 )

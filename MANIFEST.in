@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include data_cleaner *.py
+recursive-include data_cleaner py.typed
+graft tests
+graft examples
+global-exclude __pycache__
+global-exclude *.pyc
+global-exclude *.pyo

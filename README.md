@@ -1,5 +1,10 @@
 # DataCleaner
 
+[![PyPI version](https://img.shields.io/pypi/v/data-cleaner.svg)](https://pypi.org/project/data-cleaner/)
+[![Python versions](https://img.shields.io/pypi/pyversions/data-cleaner.svg)](https://pypi.org/project/data-cleaner/)
+[![License](https://img.shields.io/pypi/l/data-cleaner.svg)](https://github.com/MohammadvHossein/data_cleaner/blob/main/LICENSE)
+[![CI](https://github.com/MohammadvHossein/data_cleaner/actions/workflows/ci.yml/badge.svg)](https://github.com/MohammadvHossein/data_cleaner/actions/workflows/ci.yml)
+
 **Automated data cleaning & standardization pipeline for ML projects.**
 
 DataCleaner takes raw CSV/Excel data and transforms it into production-ready ML features - handling nulls, encoding categories, selecting the best scaler per column, and packaging everything into a reusable inference pipeline.
@@ -32,15 +37,24 @@ DataCleaner takes raw CSV/Excel data and transforms it into production-ready ML 
 ### Install
 
 ```bash
-pip install -e .
+pip install data-cleaner
 ```
 
-Optional dependencies for extra features:
+With optional extras:
 
 ```bash
-pip install -e .[plot]       # visualization (matplotlib, seaborn)
-pip install -e .[imbalance]  # SMOTE oversampling support
-pip install -e .[all]        # all optional features
+pip install data-cleaner[plot]       # visualization (matplotlib, seaborn)
+pip install data-cleaner[imbalance]   # SMOTE oversampling support
+pip install data-cleaner[all]         # all optional features
+```
+
+For a development (editable) install from source:
+
+```bash
+git clone https://github.com/MohammadvHossein/data_cleaner.git
+cd data_cleaner
+pip install -e .
+pip install -e .[all]                # including all extras
 ```
 
 ### Minimal example

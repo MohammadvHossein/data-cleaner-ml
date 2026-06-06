@@ -2,11 +2,17 @@
 
 from . import __version__
 
-if __name__ == "__main__":
+
+def main() -> None:
+    """Print version and usage information."""
     print(f"data_cleaner v{__version__}")
     print("Automated data cleaning and standardization for ML pipelines.")
     print()
     print("Usage:")
     print("  from data_cleaner import DataCleaner")
-    print("  dc = DataCleaner()")
+    print('  dc = DataCleaner()')
     print('  dc.load("data.csv").set_target("target").prepare()')
+
+
+if __name__ == "__main__":
+    main()

@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +35,11 @@ jobs:
       - name: Test import
         run: |
           python -c "from data_cleaner import DataCleaner; print('Import OK')"
+
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov
+          pytest tests/ --cov=data_cleaner --tb=short
 
       - name: Run example
         run: |

@@ -369,7 +369,7 @@ def test_main_module():
     import sys
     result = subprocess.run(
         [sys.executable, "-m", "data_cleaner"],
-        capture_output=True, text=True, cwd="C:\\Users\\Mohammad Hossein\\Desktop\\AWS"
+        capture_output=True, text=True
     )
     assert result.returncode == 0
     assert "data_cleaner v" in result.stdout
