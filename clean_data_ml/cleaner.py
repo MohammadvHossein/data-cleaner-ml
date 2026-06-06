@@ -1209,7 +1209,6 @@ class DataCleaner:
         if self.df is None:
             raise ValueError("No data loaded. Use .load() or .load_df() first.")
         fixes: List[str] = []
-        import re
 
         for col in self.df.columns:
             dtype = self.df[col].dtype
