@@ -1,18 +1,40 @@
+"""Optional visualization module for DataCleaner.
+
+Requires matplotlib and seaborn (install with ``pip install data-cleaner[plot]``).
+"""
+
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING, List, Optional, Tuple
+
+if TYPE_CHECKING:
+    from .cleaner import DataCleaner
 
 logger = logging.getLogger(__name__)
 
 try:
     import matplotlib.pyplot as plt
     import seaborn as sns
+
     _HAS_MPL = True
 except ImportError:
     _HAS_MPL = False
-    logger.warning("matplotlib/seaborn not installed. Install with: pip install data-cleaner[plot]")
+
+    def _noop(*args, **kwargs) -> None:  # type: ignore[misc]
+        return None
 
 
-def plot_null_report(dc):
+def plot_null_report(dc: "DataCleaner") -> None:
+    """Plot bar charts of null counts and null percentages for each column.
+
+    Parameters
+    ----------
+    dc : DataCleaner
+        A DataCleaner instance with loaded data.
+    """
     if not _HAS_MPL:
+        logger.warning("matplotlib/seaborn not installed. Install with: pip install data-cleaner[plot]")
         return
     if dc.df is None:
         logger.error("No data loaded")
@@ -33,8 +55,18 @@ def plot_null_report(dc):
     plt.show()
 
 
-def plot_distributions(dc, cols=None):
+def plot_distributions(dc: "DataCleaner", cols: Optional[List[str]] = None) -> None:
+    """Plot histograms with KDE and boxplots for numeric columns.
+
+    Parameters
+    ----------
+    dc : DataCleaner
+        A DataCleaner instance with loaded data.
+    cols : list of str, optional
+        Subset of numeric columns to plot. If None, all numeric columns are used.
+    """
     if not _HAS_MPL:
+        logger.warning("matplotlib/seaborn not installed. Install with: pip install data-cleaner[plot]")
         return
     if dc.df is None:
         logger.error("No data loaded")
@@ -47,10 +79,10 @@ def plot_distributions(dc, cols=None):
         return
     n = len(df.columns)
     fig, axes = plt.subplots(n, 2, figsize=(12, 3 * n))
-    axes = axes.flatten() if n > 1 else axes
+    axes_flat = axes.flatten() if n > 1 else axes
     for i, col in enumerate(df.columns):
-        ax_hist = axes[i * 2] if n > 1 else axes[0]
-        ax_box = axes[i * 2 + 1] if n > 1 else axes[1]
+        ax_hist: plt.Axes = axes_flat[i * 2] if n > 1 else axes[0]  # type: ignore[assignment]
+        ax_box: plt.Axes = axes_flat[i * 2 + 1] if n > 1 else axes[1]  # type: ignore[assignment]
         sns.histplot(df[col].dropna(), kde=True, ax=ax_hist)
         ax_hist.set_title(f"{col} - Distribution")
         sns.boxplot(x=df[col].dropna(), ax=ax_box)
@@ -59,8 +91,18 @@ def plot_distributions(dc, cols=None):
     plt.show()
 
 
-def plot_correlation(dc, figsize=(10, 8)):
+def plot_correlation(dc: "DataCleaner", figsize: Tuple[int, int] = (10, 8)) -> None:
+    """Plot a correlation heatmap for all numeric columns.
+
+    Parameters
+    ----------
+    dc : DataCleaner
+        A DataCleaner instance with loaded data.
+    figsize : tuple of int, optional
+        Figure size passed to matplotlib (default (10, 8)).
+    """
     if not _HAS_MPL:
+        logger.warning("matplotlib/seaborn not installed. Install with: pip install data-cleaner[plot]")
         return
     if dc.df is None:
         logger.error("No data loaded")
@@ -77,8 +119,18 @@ def plot_correlation(dc, figsize=(10, 8)):
     plt.show()
 
 
-def plot_before_after(dc):
+def plot_before_after(dc: "DataCleaner") -> None:
+    """Compare raw vs cleaned distributions for common numeric columns.
+
+    Requires ``.prepare()`` to have been called first.
+
+    Parameters
+    ----------
+    dc : DataCleaner
+        A fitted DataCleaner instance.
+    """
     if not _HAS_MPL:
+        logger.warning("matplotlib/seaborn not installed. Install with: pip install data-cleaner[plot]")
         return
     if not dc.is_fitted:
         logger.error("Must call .prepare() first")
@@ -91,10 +143,10 @@ def plot_before_after(dc):
         return
     n = len(common)
     fig, axes = plt.subplots(n, 2, figsize=(12, 3 * n))
-    axes = axes.flatten() if n > 1 else axes
+    axes_flat = axes.flatten() if n > 1 else axes
     for i, col in enumerate(common):
-        ax_before = axes[i * 2] if n > 1 else axes[0]
-        ax_after = axes[i * 2 + 1] if n > 1 else axes[1]
+        ax_before: plt.Axes = axes_flat[i * 2] if n > 1 else axes[0]  # type: ignore[assignment]
+        ax_after: plt.Axes = axes_flat[i * 2 + 1] if n > 1 else axes[1]  # type: ignore[assignment]
         ax_before.hist(raw[col].dropna(), bins=20, alpha=0.7)
         ax_before.set_title(f"{col} - Before")
         ax_after.hist(clean[col].dropna(), bins=20, alpha=0.7, color="green")

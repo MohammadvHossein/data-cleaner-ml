@@ -1,3 +1,5 @@
+"""data_cleaner: automated data cleaning and standardization for ML pipelines."""
+
 from .cleaner import DataCleaner
 from . import stats
 
