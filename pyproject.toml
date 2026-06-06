@@ -59,10 +59,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/MohammadvHossein/data_cleaner"
-Repository = "https://github.com/MohammadvHossein/data_cleaner"
-"Bug Tracker" = "https://github.com/MohammadvHossein/data_cleaner/issues"
-Changelog = "https://github.com/MohammadvHossein/data_cleaner/releases"
+Homepage = "https://github.com/MohammadvHossein/clean-data-ml"
+Repository = "https://github.com/MohammadvHossein/clean-data-ml"
+"Bug Tracker" = "https://github.com/MohammadvHossein/clean-data-ml/issues"
+Changelog = "https://github.com/MohammadvHossein/clean-data-ml/releases"
 
 [project.scripts]
 clean-data-ml = "clean_data_ml.__main__:main"

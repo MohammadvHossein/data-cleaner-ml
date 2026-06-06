@@ -11,11 +11,11 @@ setup(
     long_description_content_type="text/markdown",
     author="Mohammad Hossein Habibpour",
     author_email="habibpour.programming@gmail.com",
-    url="https://github.com/MohammadvHossein/data_cleaner",
+    url="https://github.com/MohammadvHossein/clean-data-ml",
     project_urls={
-        "Homepage": "https://github.com/MohammadvHossein/data_cleaner",
-        "Repository": "https://github.com/MohammadvHossein/data_cleaner",
-        "Bug Tracker": "https://github.com/MohammadvHossein/data_cleaner/issues",
+        "Homepage": "https://github.com/MohammadvHossein/clean-data-ml",
+        "Repository": "https://github.com/MohammadvHossein/clean-data-ml",
+        "Bug Tracker": "https://github.com/MohammadvHossein/clean-data-ml/issues",
     },
     packages=find_packages(),
     install_requires=[

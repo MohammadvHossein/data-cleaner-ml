@@ -6,10 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
@@ -21,15 +26,22 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Install core dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
+
+      - name: Install test & lint tools
+        run: |
+          pip install flake8 pytest pytest-cov
+
+      - name: Install optional extras (plot, imbalance)
+        continue-on-error: true
+        run: |
           pip install -e .[all]
 
       - name: Lint with flake8
         run: |
-          pip install flake8
           flake8 clean_data_ml/ --max-line-length=120 --ignore=E402,W503
 
       - name: Test import
@@ -38,8 +50,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pip install pytest pytest-cov
-          pytest tests/ --cov=clean_data_ml --tb=short
+          pytest tests/ --cov=clean_data_ml --tb=short -x
 
       - name: Run example
         run: |
