@@ -1198,7 +1198,7 @@ class DataCleaner:
         fixes: List[str] = []
 
         for col in self.df.columns:
-            if not pd.api.types.is_object_dtype(self.df[col]):
+            if not pd.api.types.is_string_dtype(self.df[col]):
                 continue
             sample = self.df[col].dropna().head(100)
             if sample.empty:
