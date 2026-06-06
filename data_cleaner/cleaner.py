@@ -7,7 +7,6 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
 from .auto_scaler import select_best_scaler
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 try:
@@ -31,12 +30,13 @@ class CleanPipeline:
         self.onehot_cols = []
         self.imputer = None
         self.impute_cols = []
-        self.impute_strategy = {}
+        self.cat_impute_values = {}
         self.used_knn = False
         self.problem_type = None
         self.dropped_useless_cols = []
         self.outlier_bounds = {}
         self.poly_features = None
+        self.poly_numeric_cols = []
 
     def transform(self, df):
         df = df.copy()
@@ -51,16 +51,25 @@ class CleanPipeline:
                 imputed = self.imputer.transform(df[present_impute])
                 df[present_impute] = imputed
 
+        for col in self.categorical_cols:
+            if col in df.columns:
+                fill_val = self.cat_impute_values.get(col)
+                if fill_val is not None:
+                    df[col] = df[col].fillna(fill_val)
+                else:
+                    df[col] = df[col].fillna("unknown")
+                df[col] = df[col].astype(str)
+
+        if self.outlier_bounds:
+            for col, bounds in self.outlier_bounds.items():
+                if col in df.columns:
+                    df[col] = df[col].clip(bounds["lower"], bounds["upper"])
+
         for col in self.binary_cols:
             if col in df.columns:
                 mapping = self.label_encoders.get(col, {})
                 df[col] = df[col].fillna(list(mapping.keys())[0] if mapping else "unknown")
                 df[col] = df[col].map(mapping).fillna(0)
-
-        for col in self.categorical_cols:
-            if col in df.columns:
-                df[col] = df[col].fillna("unknown")
-                df[col] = df[col].astype(str)
 
         if self.onehot_encoder is not None and self.categorical_cols:
             present_cat = [c for c in self.categorical_cols if c in df.columns]
@@ -74,6 +83,19 @@ class CleanPipeline:
         for col, scaler in self.scalers.items():
             if col in df.columns:
                 df[col] = scaler.transform(df[[col]])
+
+        if self.poly_features is not None and self.poly_numeric_cols:
+            present_poly = [c for c in self.poly_numeric_cols if c in df.columns]
+            if len(present_poly) >= 2:
+                poly_out = self.poly_features.transform(df[present_poly])
+                poly_names = self.poly_features.get_feature_names_out(present_poly).tolist()
+                new_names = [n for n in poly_names if n not in df.columns]
+                poly_df = pd.DataFrame(
+                    poly_out[:, len(present_poly):],
+                    columns=new_names,
+                    index=df.index
+                )
+                df = pd.concat([df, poly_df], axis=1)
 
         missing = set(self.feature_cols or []) - set(df.columns)
         if missing:
@@ -104,6 +126,8 @@ class DataCleaner:
         self.X_test = None
         self.y_train = None
         self.y_test = None
+        self.X_val = None
+        self.y_val = None
         self.X_clean = None
         self.y_clean = None
         self.is_fitted = False
@@ -133,7 +157,10 @@ class DataCleaner:
         for col in columns:
             if col not in self.df.columns:
                 raise ValueError(f"Column '{col}' not found in data")
-        self.columns_to_drop = columns
+        existing = set(self.columns_to_drop)
+        for col in columns:
+            if col not in existing:
+                self.columns_to_drop.append(col)
         return self
 
     def _auto_detect_types(self, X=None):
@@ -153,14 +180,12 @@ class DataCleaner:
 
         for col in df.columns:
             if pd.api.types.is_numeric_dtype(df[col]):
-                unique_vals = df[col].nunique()
-                if unique_vals == 2:
+                if df[col].nunique() == 2:
                     binary_cols.append(col)
                 else:
                     numeric_cols.append(col)
             else:
-                unique_vals = df[col].nunique()
-                if unique_vals == 2:
+                if df[col].nunique() == 2:
                     binary_cols.append(col)
                 else:
                     categorical_cols.append(col)
@@ -211,7 +236,7 @@ class DataCleaner:
 
     def _impute_nulls(self, df, impute_cols):
         if not impute_cols:
-            return df, None
+            return df
 
         numeric_impute = [c for c in impute_cols if pd.api.types.is_numeric_dtype(df[c])]
         categorical_impute = [c for c in impute_cols if not pd.api.types.is_numeric_dtype(df[c])]
@@ -224,7 +249,10 @@ class DataCleaner:
             self.pipeline.used_knn = True
 
         for col in categorical_impute:
-            df[col].fillna(df[col].mode()[0] if not df[col].mode().empty else "unknown", inplace=True)
+            mode_val = df[col].mode()
+            fill_val = mode_val.iloc[0] if not mode_val.empty else "unknown"
+            df[col] = df[col].fillna(fill_val)
+            self.pipeline.cat_impute_values[col] = fill_val
 
         return df
 
@@ -249,12 +277,8 @@ class DataCleaner:
         for col in X.columns:
             if X[col].nunique() <= 1:
                 drop_cols.add(col)
-
-        for col in X.columns:
-            if col in drop_cols:
-                continue
-            if not pd.api.types.is_numeric_dtype(X[col]):
-                if X[col].nunique() / n > 0.9 and n > 10:
+            elif not pd.api.types.is_numeric_dtype(X[col]) and n > 10:
+                if X[col].nunique() / n > 0.9:
                     drop_cols.add(col)
 
         X = X.drop(columns=list(drop_cols))
@@ -266,10 +290,12 @@ class DataCleaner:
             cols = [c for c in X.columns if pd.api.types.is_numeric_dtype(X[c]) and X[c].nunique() > 2]
             if not cols:
                 return X
+
             def _compute_bounds(col):
                 Q1, Q3 = X[col].quantile(0.25), X[col].quantile(0.75)
                 IQR = Q3 - Q1
                 return col, Q1 - 1.5 * IQR, Q3 + 1.5 * IQR
+
             results = Parallel(n_jobs=n_jobs)(delayed(_compute_bounds)(c) for c in cols)
             bounds = {col: (lo, hi) for col, lo, hi in results}
             self.pipeline.outlier_bounds = {col: {"lower": lo, "upper": hi} for col, (lo, hi) in bounds.items()}
@@ -279,11 +305,10 @@ class DataCleaner:
                 elif method == "remove":
                     X = X[(X[col] >= lo) & (X[col] <= hi)]
             return X
+
         bounds = {}
         for col in X.columns:
-            if not pd.api.types.is_numeric_dtype(X[col]):
-                continue
-            if X[col].nunique() <= 2:
+            if not pd.api.types.is_numeric_dtype(X[col]) or X[col].nunique() <= 2:
                 continue
             Q1 = X[col].quantile(0.25)
             Q3 = X[col].quantile(0.75)
@@ -294,7 +319,6 @@ class DataCleaner:
             if method == "clip":
                 X[col] = X[col].clip(lower, upper)
             elif method == "remove":
-                before = len(X)
                 X = X[(X[col] >= lower) & (X[col] <= upper)]
         self.pipeline.outlier_bounds = bounds
         return X
@@ -303,7 +327,7 @@ class DataCleaner:
         from sklearn.preprocessing import PolynomialFeatures
 
         numeric_cols = [c for c in X.columns if pd.api.types.is_numeric_dtype(X[c]) and X[c].nunique() > 2]
-        if not numeric_cols or len(numeric_cols) < 2:
+        if len(numeric_cols) < 2:
             return X
 
         poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
@@ -318,6 +342,7 @@ class DataCleaner:
             index=X.index
         )
         self.pipeline.poly_features = poly
+        self.pipeline.poly_numeric_cols = numeric_cols
         X = pd.concat([X, poly_df], axis=1)
         return X
 
@@ -364,6 +389,30 @@ class DataCleaner:
             df[col] = scaler.fit_transform(df[[col]])
         return df
 
+    def _split_data(self, X, y, test_size, val_size):
+        if val_size is not None:
+            test_val_size = test_size + val_size
+            X_train, X_test_val, y_train, y_test_val = train_test_split(
+                X, y, test_size=test_val_size, random_state=self.random_state
+            )
+            val_ratio = val_size / test_val_size if test_val_size > 0 else 0
+            X_val, X_test, y_val, y_test = train_test_split(
+                X_test_val, y_test_val, test_size=1 - val_ratio,
+                random_state=self.random_state
+            )
+            self.X_train, self.X_val, self.X_test = X_train, X_val, X_test
+            self.y_train, self.y_val, self.y_test = y_train, y_val, y_test
+            self.is_fitted = True
+            return X_train, X_val, X_test, y_train, y_val, y_test
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=self.random_state
+        )
+        self.X_train, self.X_test = X_train, X_test
+        self.y_train, self.y_test = y_train, y_test
+        self.is_fitted = True
+        return X_train, X_test, y_train, y_test
+
     def prepare(self, test_size=0.2, val_size=None, handle_nulls=True, auto_scale=True,
                 auto_encode=True, null_drop_ratio=None, auto_drop_useless=True,
                 handle_outliers=None, feature_engineering=False, handle_imbalance=False,
@@ -403,7 +452,10 @@ class DataCleaner:
                     X = X.loc[valid_idx]
                     y = y.loc[valid_idx]
                 else:
-                    raise ValueError(f"Target column '{self.target_col}' has {y_null_ratio:.1%} null values. Please clean it manually.")
+                    raise ValueError(
+                        f"Target column '{self.target_col}' has {y_null_ratio:.1%} null values. "
+                        "Please clean it manually."
+                    )
 
             merged = pd.concat([X, y], axis=1)
             merged, null_info, impute_cols = self._handle_nulls(merged, null_drop_ratio)
@@ -414,6 +466,7 @@ class DataCleaner:
 
         if handle_outliers in ("clip", "remove"):
             X = self._handle_outliers(X, method=handle_outliers, n_jobs=n_jobs)
+            y = y.loc[X.index]
 
         if feature_engineering:
             X = self._feature_engineering(X)
@@ -427,7 +480,7 @@ class DataCleaner:
                 X[col] = le.fit_transform(X[col].astype(str))
 
         if auto_scale:
-            scalers = self._select_scalers(numeric_cols, X)
+            scalers = self._select_scalers(numeric_cols, X, n_jobs=n_jobs)
             self.pipeline.scalers = scalers
             X = self._scale_features(X, scalers)
 
@@ -435,32 +488,8 @@ class DataCleaner:
         self.y_clean = y
         self.pipeline.feature_cols = X.columns.tolist()
 
-        def split_and_return(X, y):
-            if val_size is not None:
-                test_val_size = test_size + val_size
-                X_train, X_test_val, y_train, y_test_val = train_test_split(
-                    X, y, test_size=test_val_size, random_state=self.random_state
-                )
-                val_ratio = val_size / test_val_size if test_val_size > 0 else 0
-                X_val, X_test, y_val, y_test = train_test_split(
-                    X_test_val, y_test_val, test_size=1 - val_ratio,
-                    random_state=self.random_state
-                )
-                self.X_train, self.X_val, self.X_test = X_train, X_val, X_test
-                self.y_train, self.y_val, self.y_test = y_train, y_val, y_test
-                self.is_fitted = True
-                return X_train, X_val, X_test, y_train, y_val, y_test
-            else:
-                X_train, X_test, y_train, y_test = train_test_split(
-                    X, y, test_size=test_size, random_state=self.random_state
-                )
-                self.X_train, self.X_test = X_train, X_test
-                self.y_train, self.y_test = y_train, y_test
-                self.is_fitted = True
-                return X_train, X_test, y_train, y_test
-
         if handle_imbalance and self.pipeline.problem_type == "classification":
-            result = split_and_return(X, y)
+            result = self._split_data(X, y, test_size, val_size)
             if val_size is not None:
                 X_train, X_val, X_test, y_train, y_val, y_test = result
             else:
@@ -471,7 +500,7 @@ class DataCleaner:
                 return X_train, X_val, X_test, y_train, y_val, y_test
             return X_train, X_test, y_train, y_test
 
-        return split_and_return(X, y)
+        return self._split_data(X, y, test_size, val_size)
 
     def get_pipeline(self):
         if not self.is_fitted:
@@ -483,7 +512,16 @@ class DataCleaner:
 
     @staticmethod
     def load_pipeline(path):
-        return CleanPipeline.load(path)
+        pipeline = CleanPipeline.load(path)
+        dc = DataCleaner()
+        dc.pipeline = pipeline
+        dc.target_col = pipeline.target_col
+        dc.columns_to_drop = pipeline.columns_to_drop
+        dc.is_fitted = True
+        return dc
+
+    def transform(self, df):
+        return self.get_pipeline().transform(df)
 
     def export_cleaned(self, filepath, include_target=False):
         if not self.is_fitted:
@@ -493,22 +531,26 @@ class DataCleaner:
             df[self.target_col] = self.y_clean.values
         if filepath.endswith(".csv"):
             df.to_csv(filepath, index=False)
-        elif filepath.endswith((".xls", ".xlsx")):
+        elif filepath.endswith(".xlsx"):
             df.to_excel(filepath, index=False)
+        elif filepath.endswith(".xls"):
+            raise ValueError(
+                "The .xls format is not supported. Use .xlsx (Excel) or .csv instead."
+            )
         else:
-            raise ValueError("Only CSV and Excel formats are supported")
+            raise ValueError("Only CSV and Excel (.xlsx) formats are supported")
         logger.info(f"Cleaned data exported to {filepath}")
 
     def summary(self):
         if self.df is None:
             return "No data loaded"
-        info = {}
-        info["shape"] = self.df.shape
-        info["columns"] = list(self.df.columns)
-        info["dtypes"] = {str(k): str(v) for k, v in self.df.dtypes.items()}
-        info["null_counts"] = self.df.isnull().sum().to_dict()
-        info["null_percent"] = (self.df.isnull().sum() / len(self.df) * 100).to_dict()
-        return info
+        return {
+            "shape": self.df.shape,
+            "columns": list(self.df.columns),
+            "dtypes": {str(k): str(v) for k, v in self.df.dtypes.items()},
+            "null_counts": self.df.isnull().sum().to_dict(),
+            "null_percent": (self.df.isnull().sum() / len(self.df) * 100).to_dict(),
+        }
 
     def drop_duplicates(self, subset=None, keep="first"):
         if self.df is None:
@@ -632,7 +674,9 @@ class DataCleaner:
                 ax.set_yticklabels(corr.columns, fontsize=8)
                 for i in range(len(corr.columns)):
                     for j in range(len(corr.columns)):
-                        ax.text(j, i, f"{corr.iloc[i, j]:.2f}", ha="center", va="center", fontsize=7, color="white" if abs(corr.iloc[i, j]) > 0.5 else "black")
+                        val = corr.iloc[i, j]
+                        ax.text(j, i, f"{val:.2f}", ha="center", va="center", fontsize=7,
+                                color="white" if abs(val) > 0.5 else "black")
                 fig.colorbar(im, ax=ax, shrink=0.8)
                 ax.set_title("Correlation Heatmap", fontsize=12)
                 b64 = _img_to_b64(fig)
@@ -660,7 +704,7 @@ class DataCleaner:
                 b64 = _img_to_b64(fig)
                 hist_html = f'<div class="section"><h2>Distributions</h2><img src="data:image/png;base64,{b64}" style="max-width:100%;"></div>'
 
-            cat_plot_cols = [c for c in cat_df.columns if cat_df[c].nunique() <= 20 and cat_df[c].nunique() > 1]
+            cat_plot_cols = [c for c in cat_df.columns if 1 < cat_df[c].nunique() <= 20]
             if cat_plot_cols:
                 n_plots = len(cat_plot_cols)
                 cols_per_row = 3
@@ -705,7 +749,6 @@ class DataCleaner:
                 lo, hi = Q1 - 1.5 * IQR, Q3 + 1.5 * IQR
                 outliers = ((s < lo) | (s > hi)).sum()
                 skew = s.skew()
-                is_skewed = abs(skew) > 1
                 extra = (
                     f"<td>{_fmt(s.min())}</td>"
                     f"<td>{_fmt(Q1)}</td>"
@@ -740,8 +783,8 @@ class DataCleaner:
                 quality_issues.append(f"<li><span class='badge badge-err'>HIGH NULLS</span> <b>{col}</b>: {null_p}% missing</li>")
             elif null_p > 5:
                 quality_issues.append(f"<li><span class='badge badge-warn'>NULLS</span> <b>{col}</b>: {null_p}% missing</li>")
-        if df.duplicated().sum() > 0:
-            quality_issues.append(f"<li><span class='badge badge-warn'>DUPLICATES</span> {df.duplicated().sum()} duplicate rows found</li>")
+        if dup_count > 0:
+            quality_issues.append(f"<li><span class='badge badge-warn'>DUPLICATES</span> {dup_count} duplicate rows found</li>")
         if quality_issues:
             quality_html = "<div class='section'><h2>Data Quality Warnings</h2><ul>" + "".join(quality_issues) + "</ul></div>"
         else:

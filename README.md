@@ -138,13 +138,18 @@ Main class. All methods return `self` for chaining.
 | `.load(filepath)` | Load CSV or Excel file |
 | `.load_df(df)` | Load from an existing pandas DataFrame |
 | `.set_target(col)` | Set the target column |
-| `.drop_columns(cols)` | Drop unwanted columns (IDs, etc.) |
+| `.drop_columns(cols)` | Drop unwanted columns (IDs, etc.) — append-only, safe to call multiple times |
 | `.prepare(...)` | Execute the full pipeline (see parameters below) |
 | `.get_pipeline()` | Returns the fitted `CleanPipeline` for transforming new data |
 | `.save_pipeline(path)` | Save pipeline to disk |
-| `.load_pipeline(path)` | Static method -- load a saved pipeline |
-| `.export_cleaned(filepath, include_target=False)` | Export the fully cleaned dataset (features only, or with target if `True`) to CSV or Excel |
+| `.load_pipeline(path)` | Load a saved pipeline — returns a `DataCleaner` instance wrapping the pipeline |
+| `.transform(df)` | Apply all cleaning steps to new raw data (same as `get_pipeline().transform(df)`) |
+| `.export_cleaned(filepath, include_target=False)` | Export the fully cleaned dataset (features only, or with target if `True`) to CSV or Excel (.xlsx) |
 | `.summary()` | Dict with shape, columns, dtypes, null counts |
+| `.profile_report(filepath)` | Generate a self-contained HTML data profiling report with stats, distributions, and quality warnings |
+| `.drop_duplicates(subset, keep)` | Remove duplicate rows |
+| `.validate_schema(expected_schema, required_cols)` | Validate column existence and expected dtypes |
+| `.auto_fix_dtypes()` | Auto-convert object columns to datetime or numeric where possible |
 
 ### `prepare()` Parameters
 
@@ -162,8 +167,8 @@ Main class. All methods return `self` for chaining.
 | `handle_imbalance` | `False` | Apply SMOTE oversampling on imbalanced classification data |
 | `n_jobs` | `1` | Number of parallel jobs for scaler selection and outlier handling. `-1` uses all cores |
 
-### `CleanPipeline`
-Holds all fitted transformers. Used for inference on raw data.
+### `CleanPipeline` (internal)
+Holds all fitted transformers. Can be used directly, but prefer `DataCleaner` for full functionality.
 
 | Method | Description |
 |--------|-------------|
@@ -171,13 +176,13 @@ Holds all fitted transformers. Used for inference on raw data.
 | `.save(path)` | Pickle to disk |
 | `.load(path)` | Static method -- load from disk |
 
-### Pipeline Attributes
+### Pipeline Attributes (accessible via `dc.pipeline.*`)
 
 | Attribute | Description |
 |-----------|-------------|
 | `.problem_type` | `"classification"` or `"regression"` (auto-detected) |
 | `.dropped_useless_cols` | Columns auto-dropped by `auto_drop_useless` |
-| `.outlier_bounds` | IQR bounds used for outlier handling |
+| `.outlier_bounds` | IQR bounds used for outlier handling (applied in transform) |
 | `.scalers` | Dict of column -> fitted scaler |
 | `.onehot_cols` | One-hot encoded column names |
 | `.label_encoders` | Binary column -> mapping dict |
