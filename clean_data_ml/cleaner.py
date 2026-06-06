@@ -1399,12 +1399,12 @@ class DataCleaner:
                     f"<td>{outliers}</td>"
                 )
             else:
-                unique = df[col].nunique()
+                n_unique = df[col].nunique()
                 top = df[col].mode().iloc[0] if not df[col].mode().empty else ""
                 top_val = df[col].value_counts(normalize=True)
                 top_pct = (top_val.iloc[0] * 100) if not top_val.empty else 0
                 extra = (
-                    "<td colspan='9'><span class='chip'>{unique} unique</span>"
+                    f"<td colspan='9'><span class='chip'>{n_unique} unique</span>"
                     f" top: <b>{str(top)[:40]}</b> ({top_pct:.1f}%)</td>"
                 )
 
@@ -1511,7 +1511,10 @@ class DataCleaner:
     <div class="stat-card"><div class="num">{int(null_df.sum()):,}</div><div class="label">Null Cells</div></div>
     <div class="stat-card"><div class="num">{dup_count:,}</div><div class="label">Duplicate Rows</div></div>
     <div class="stat-card"><div class="num">{total_memory:.1f}</div><div class="label">Memory (KB)</div></div>
-    <div class="stat-card"><div class="num">{df.select_dtypes(include='datetime64').shape[1]}</div><div class="label">Date Columns</div></div>
+    <div class="stat-card">
+      <div class="num">{df.select_dtypes(include='datetime64').shape[1]}</div>
+      <div class="label">Date Columns</div>
+    </div>
   </div>
 </div>
 
