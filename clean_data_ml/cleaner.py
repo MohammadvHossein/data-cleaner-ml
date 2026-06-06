@@ -1182,6 +1182,19 @@ class DataCleaner:
         logger.info("Schema validation passed")
         return []
 
+    @staticmethod
+    def _looks_like_date(s: str) -> bool:
+        import re
+        return bool(re.match(r'^\d{4}[-/]\d{1,2}[-/]\d{1,2}', s.strip()))
+
+    @staticmethod
+    def _looks_numeric(s: str) -> bool:
+        try:
+            float(s.replace(",", ""))
+            return True
+        except (ValueError, TypeError):
+            return False
+
     def auto_fix_dtypes(self) -> List[str]:
         """Auto-convert object columns to datetime or numeric where possible.
 
@@ -1196,6 +1209,7 @@ class DataCleaner:
         if self.df is None:
             raise ValueError("No data loaded. Use .load() or .load_df() first.")
         fixes: List[str] = []
+        import re
 
         for col in self.df.columns:
             dtype = self.df[col].dtype
@@ -1205,39 +1219,29 @@ class DataCleaner:
             if sample.empty:
                 continue
 
-            vals = sample.tolist()
-            try:
-                parsed = pd.to_datetime(vals, errors="coerce", format="mixed")
-            except (ValueError, TypeError, AttributeError):
-                try:
-                    parsed = pd.to_datetime(vals, errors="coerce")
-                except (ValueError, TypeError, AttributeError):
-                    parsed = None
-            if parsed is not None:
-                n_valid = int(pd.Series(parsed).notna().sum())
-                if n_valid / len(vals) > 0.7:
-                    try:
-                        self.df[col] = pd.to_datetime(
-                            self.df[col].tolist(), errors="coerce",
-                        )
-                        fixes.append(f"{col}: object -> datetime")
-                        continue
-                    except (ValueError, TypeError, AttributeError):
-                        pass
+            vals = [str(v) for v in sample.tolist()]
+            n = len(vals)
 
-            try:
-                cleaned = [s.replace(",", "") for s in vals if isinstance(s, str)]
-                parsed = pd.to_numeric(cleaned, errors="coerce")
-                n_valid = int(pd.Series(parsed).notna().sum())
-                if n_valid / len(cleaned) > 0.7:
+            date_count = sum(1 for v in vals if self._looks_like_date(v))
+            if date_count / n > 0.7:
+                try:
+                    self.df[col] = pd.to_datetime(self.df[col], errors="coerce")
+                    fixes.append(f"{col}: object -> datetime")
+                    continue
+                except Exception:
+                    pass
+
+            num_count = sum(1 for v in vals if self._looks_numeric(v))
+            if num_count / n > 0.7:
+                try:
                     self.df[col] = pd.to_numeric(
                         self.df[col].astype(str).str.replace(",", "", regex=False),
                         errors="coerce",
                     )
                     fixes.append(f"{col}: object -> numeric")
                     continue
-            except (ValueError, TypeError, AttributeError):
-                pass
+                except Exception:
+                    pass
 
         if fixes:
             for f in fixes:
