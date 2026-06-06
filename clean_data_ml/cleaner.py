@@ -1204,26 +1204,38 @@ class DataCleaner:
             if sample.empty:
                 continue
 
+            vals = sample.tolist()
             try:
-                parsed = pd.to_datetime(sample, errors="coerce")
-                if parsed.notna().sum() / len(parsed) > 0.7:
-                    self.df[col] = pd.to_datetime(self.df[col], errors="coerce")
-                    fixes.append(f"{col}: object -> datetime")
-                    continue
-            except (ValueError, TypeError):
-                pass
+                parsed = pd.to_datetime(vals, errors="coerce", format="mixed")
+            except (ValueError, TypeError, AttributeError):
+                try:
+                    parsed = pd.to_datetime(vals, errors="coerce")
+                except (ValueError, TypeError, AttributeError):
+                    parsed = None
+            if parsed is not None:
+                n_valid = int(pd.Series(parsed).notna().sum())
+                if n_valid / len(vals) > 0.7:
+                    try:
+                        self.df[col] = pd.to_datetime(
+                            self.df[col].tolist(), errors="coerce",
+                        )
+                        fixes.append(f"{col}: object -> datetime")
+                        continue
+                    except (ValueError, TypeError, AttributeError):
+                        pass
 
             try:
-                cleaned = sample.astype(str).str.replace(",", "", regex=False)
+                cleaned = [s.replace(",", "") for s in vals if isinstance(s, str)]
                 parsed = pd.to_numeric(cleaned, errors="coerce")
-                if parsed.notna().sum() / len(parsed) > 0.7:
+                n_valid = int(pd.Series(parsed).notna().sum())
+                if n_valid / len(cleaned) > 0.7:
                     self.df[col] = pd.to_numeric(
                         self.df[col].astype(str).str.replace(",", "", regex=False),
                         errors="coerce",
                     )
                     fixes.append(f"{col}: object -> numeric")
                     continue
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, AttributeError):
                 pass
 
         if fixes:
