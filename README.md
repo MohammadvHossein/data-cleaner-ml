@@ -1,8 +1,8 @@
 # DataCleaner
 
-[![PyPI version](https://img.shields.io/pypi/v/clean-data-ml.svg)](https://pypi.org/project/clean-data-ml/)
-[![Python versions](https://img.shields.io/pypi/pyversions/clean-data-ml.svg)](https://pypi.org/project/clean-data-ml/)
-[![License](https://img.shields.io/pypi/l/clean-data-ml.svg)](https://github.com/MohammadvHossein/data-cleaner-ml/blob/main/LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/clean-data-ml.svg?cache=1)](https://pypi.org/project/clean-data-ml/)
+[![Python versions](https://img.shields.io/pypi/pyversions/clean-data-ml.svg?cache=1)](https://pypi.org/project/clean-data-ml/)
+[![License](https://img.shields.io/pypi/l/clean-data-ml.svg?cache=1)](https://github.com/MohammadvHossein/data-cleaner-ml/blob/main/LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/MohammadvHossein/data-cleaner-ml/ci.yml?branch=main)](https://github.com/MohammadvHossein/data-cleaner-ml/actions/workflows/ci.yml)
 
 **Automated data cleaning & standardization pipeline for ML projects.**
