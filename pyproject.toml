@@ -67,5 +67,8 @@ Changelog = "https://github.com/MohammadvHossein/data_cleaner/releases"
 [project.scripts]
 data-cleaner = "data_cleaner.__main__:main"
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 include = ["data_cleaner*"]

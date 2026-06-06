@@ -58,3 +58,6 @@ build/
 
 # Generated reports
 *.html
+
+# extra files
+test.py

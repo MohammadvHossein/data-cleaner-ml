@@ -29,6 +29,14 @@ DataCleaner takes raw CSV/Excel data and transforms it into production-ready ML 
 | **Train/Val/Test split** | Configurable split ratios |
 | **Pipeline export** | Save & reload the full transformation pipeline for inference on new data |
 | **Summary** | Quick overview of shape, dtypes, null counts & percentages |
+| **Date feature extraction** | Expands datetime columns into year/month/day/dayofweek/weekend |
+| **Missing indicators** | Adds `{col}_missing` binary columns for imputed nulls |
+| **Feature selection** | Removes weak features via mutual information |
+| **Custom encoders/scalers** | Pass your own sklearn encoders and scalers to `prepare()` |
+| **Statistical test suite** | Integrated A/B testing, t-tests, z-tests, chi-square, ANOVA |
+| **Data profiling** | Self-contained HTML report with distributions, correlations, quality warnings |
+| **Schema validation** | Validate column existence and expected dtypes |
+| **Duplicate removal** | Drop duplicate rows |
 
 ---
 
@@ -65,7 +73,7 @@ from sklearn.svm import SVC
 
 dc = DataCleaner()
 dc.load("data.csv")
-dc.set_target("price")
+dc.set_target("purchased")
 dc.drop_columns(["ID", "timestamp"])
 
 X_train, X_test, y_train, y_test = dc.prepare(test_size=0.2)
@@ -180,6 +188,11 @@ Main class. All methods return `self` for chaining.
 | `feature_engineering` | `False` | Add polynomial features (interactions, squares) |
 | `handle_imbalance` | `False` | Apply SMOTE oversampling on imbalanced classification data |
 | `n_jobs` | `1` | Number of parallel jobs for scaler selection and outlier handling. `-1` uses all cores |
+| `extract_date_features` | `False` | Expand datetime columns into year, month, day, dayofweek, weekend |
+| `add_missing_indicators` | `False` | Add `{col}_missing` binary columns for imputed nulls |
+| `feature_selection` | `None` | `"auto"` (median MI threshold) or a float threshold; removes features below threshold |
+| `custom_encoders` | `None` | Dict of `{col: encoder_instance}` to override auto-encoding |
+| `custom_scalers` | `None` | Dict of `{col: scaler_instance}` to override auto-scaling |
 
 ### `CleanPipeline` (internal)
 Holds all fitted transformers. Can be used directly, but prefer `DataCleaner` for full functionality.
@@ -200,6 +213,12 @@ Holds all fitted transformers. Can be used directly, but prefer `DataCleaner` fo
 | `.scalers` | Dict of column -> fitted scaler |
 | `.onehot_cols` | One-hot encoded column names |
 | `.label_encoders` | Binary column -> mapping dict |
+| `.feature_cols` | Ordered list of all feature columns after transformation |
+| `.poly_features` | Fitted `PolynomialFeatures` transformer (if feature_engineering was enabled) |
+| `.custom_encoders` | Dict of user-provided encoders |
+| `.custom_scalers` | Dict of user-provided scalers |
+| `.cat_impute_values` | Dict of categorical column -> mode used for imputation |
+| `.feature_importances_` | Dict of column -> mutual information score (if feature_selection was used) |
 
 ---
 
@@ -285,11 +304,21 @@ data_cleaner/
   auto_scaler.py    Automatic scaler selection logic
   stats.py          Statistical test suite (t-test, z-test, AB test, etc.)
   plotting.py       Optional visualization module
-setup.py              Package metadata
-example_train.py      Training example
-example_inference.py  Inference example
-.gitignore            Ignored files
-README.md             This file
+setup.py                  Package metadata
+pyproject.toml            Build configuration
+MANIFEST.in               sdist inclusion rules
+LICENSE                   MIT license
+example_train.py          Training example
+example_inference.py      Inference example
+.pre-commit-config.yaml   Linting hooks (black, isort, flake8)
+.gitignore                Ignored files
+README.md                 This file
+tests/
+    conftest.py           Shared test fixtures
+    test_cleaner.py       DataCleaner / CleanPipeline tests
+    test_auto_scaler.py   Scaler selection tests
+    test_stats.py         Statistical test suite tests
+    test_plotting.py      Visualization module tests
 ```
 
 ## Additional Features
@@ -319,6 +348,43 @@ Activated with `prepare(handle_outliers="clip")`.
 Generates polynomial features (degree 2) for numeric columns with more than 2 unique values. Creates interaction terms and squared features automatically.
 
 Activated with `prepare(feature_engineering=True)`.
+
+### Date Feature Extraction
+
+When `prepare(extract_date_features=True)`, datetime columns are automatically expanded into numerical components:
+- `{col}_year`, `{col}_month`, `{col}_day`, `{col}_dayofweek`, `{col}_weekend`
+- The original datetime column is dropped afterward.
+
+This happens early in the pipeline so the derived numeric columns benefit from all subsequent steps (encoding, scaling, feature engineering, etc.).
+
+### Missing Indicators
+
+When `prepare(add_missing_indicators=True)`, for every column that receives KNN imputation (null ratio above threshold), an additional binary column `{col}_missing` is added, flagging which rows originally contained nulls. This lets the model learn patterns from the missingness itself.
+
+### Feature Selection
+
+Controlled by `prepare(feature_selection="auto")` or `prepare(feature_selection=0.01)`.
+
+After all transformations, Mutual Information is computed between each feature and the target. Features with MI below the threshold are dropped:
+- `"auto"` -- drops features below the **median** MI score
+- `float` (e.g., `0.01`) -- drops features below that absolute threshold
+
+Set to `None` (default) to skip feature selection entirely.
+
+### Custom Encoders & Custom Scalers
+
+Pass fitted or unfitted sklearn-compatible transformers to override auto-detection:
+
+```python
+from sklearn.preprocessing import OrdinalEncoder, KBinsDiscretizer
+
+dc.prepare(
+    custom_encoders={"city": OrdinalEncoder()},
+    custom_scalers={"salary": KBinsDiscretizer(n_bins=5, encode="ordinal")},
+)
+```
+
+These are stored in `dc.pipeline.custom_encoders` / `dc.pipeline.custom_scalers` and applied during `transform()` as well.
 
 ### Imbalanced Data (SMOTE)
 

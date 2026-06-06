@@ -3,8 +3,8 @@ include LICENSE
 include pyproject.toml
 recursive-include data_cleaner *.py
 recursive-include data_cleaner py.typed
+include example_train.py example_inference.py
 graft tests
-graft examples
 global-exclude __pycache__
 global-exclude *.pyc
 global-exclude *.pyo

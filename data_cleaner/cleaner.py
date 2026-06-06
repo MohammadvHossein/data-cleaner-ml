@@ -287,6 +287,28 @@ class DataCleaner:
     ----------
     random_state : int
         Seed for reproducibility (default 42).
+
+    Attributes
+    ----------
+    df : pd.DataFrame or None
+        Current working DataFrame after loading.
+    raw_df : pd.DataFrame or None
+        Snapshot of the original data before any modifications.
+    target_col : str or None
+        Name of the designated target column.
+    columns_to_drop : list of str
+        Columns marked for removal via ``.drop_columns()``.
+    pipeline : CleanPipeline
+        The fitted transformation pipeline, populated after ``.prepare()``.
+        Contains all fitted transformers, scalers, encoders, etc.
+    X_train, X_test, y_train, y_test : pd.DataFrame/Series or None
+        Train/test splits produced by ``.prepare()``.
+    X_val, y_val : pd.DataFrame/Series or None
+        Optional validation split (if ``val_size`` was set in ``.prepare()``).
+    X_clean, y_clean : pd.DataFrame/Series or None
+        Fully cleaned data before splitting (available after ``.prepare()``).
+    is_fitted : bool
+        Whether ``.prepare()`` has been successfully called.
     """
 
     def __init__(self, random_state: int = 42) -> None:
