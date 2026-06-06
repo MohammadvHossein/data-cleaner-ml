@@ -243,3 +243,133 @@ def test_profile_report(dc, tmp_path):
     html = dc.profile_report(str(path))
     assert len(html) > 500
     assert path.exists()
+
+
+# ---------------------------------------------------------------------------
+# Layer 2 — Date feature extraction
+# ---------------------------------------------------------------------------
+
+def test_extract_date_features():
+    np.random.seed(42)
+    n = 50
+    start = "2023-01-01"
+    df = pd.DataFrame({
+        "join_date": pd.date_range(start, periods=n, freq="D"),
+        "value": np.random.rand(n),
+        "target": np.random.choice([0, 1], n),
+    })
+    dc = DataCleaner(random_state=42)
+    dc.load_df(df).set_target("target")
+    dc.prepare(test_size=0.3, extract_date_features=True)
+    p = dc.pipeline
+    assert "join_date" in p.date_cols
+    # year is dropped by auto_drop_useless if constant
+    for suffix in ("month", "day", "dayofweek", "weekend"):
+        assert f"join_date_{suffix}" in dc.X_clean.columns
+    assert "join_date" not in dc.X_clean.columns
+
+
+def test_extract_date_features_in_transform():
+    np.random.seed(42)
+    n = 50
+    df = pd.DataFrame({
+        "join_date": pd.date_range("2023-01-01", periods=n, freq="D"),
+        "value": np.random.rand(n),
+        "target": np.random.choice([0, 1], n),
+    })
+    dc = DataCleaner(random_state=42)
+    dc.load_df(df).set_target("target")
+    dc.prepare(test_size=0.3, extract_date_features=True)
+    new = dc.transform(pd.DataFrame({
+        "join_date": pd.to_datetime(["2024-06-15"]),
+        "value": [0.5],
+    }))
+    # Non-constant date features should appear
+    assert "join_date_month" in new.columns
+    assert new["join_date_month"].iloc[0] == 6
+
+
+# ---------------------------------------------------------------------------
+# Layer 2 — Missing indicators
+# ---------------------------------------------------------------------------
+
+def test_missing_indicators(dc):
+    dc.prepare(test_size=0.2, null_drop_ratio=0.01, add_missing_indicators=True)
+    p = dc.pipeline
+    assert len(p.missing_indicator_cols) > 0
+    for col in p.missing_indicator_cols:
+        assert f"{col}_missing" in dc.X_clean.columns
+
+
+# ---------------------------------------------------------------------------
+# Layer 2 — Feature selection
+# ---------------------------------------------------------------------------
+
+def test_feature_selection_auto(dc):
+    dc.drop_columns(["gender"])
+    dc.prepare(test_size=0.2, feature_selection="auto")
+    p = dc.pipeline
+    assert p.feature_selection_threshold is not None
+    assert isinstance(p.feature_selection_removed, list)
+
+
+def test_feature_selection_no_drop_when_all_high():
+    np.random.seed(42)
+    n = 100
+    df = pd.DataFrame({
+        "x1": np.random.rand(n),
+        "x2": np.random.rand(n),
+        "target": np.random.choice([0, 1], n),
+    })
+    dc = DataCleaner(random_state=42)
+    dc.load_df(df).set_target("target")
+    dc.prepare(test_size=0.3, feature_selection=0.0)
+    assert len(dc.pipeline.feature_selection_removed) == 0
+
+
+# ---------------------------------------------------------------------------
+# Layer 2 — Custom encoder / scaler
+# ---------------------------------------------------------------------------
+
+def test_custom_encoder():
+    from sklearn.preprocessing import LabelEncoder
+    np.random.seed(42)
+    df = pd.DataFrame({
+        "color": np.random.choice(["red", "green", "blue"], 100),
+        "value": np.random.rand(100),
+        "target": np.random.choice([0, 1], 100),
+    })
+    dc = DataCleaner(random_state=42)
+    dc.load_df(df).set_target("target")
+    dc.prepare(test_size=0.3, custom_encoders={"color": LabelEncoder()})
+    assert dc.X_clean["color"].dtype in (np.int32, np.int64)
+
+
+def test_custom_scaler():
+    from sklearn.preprocessing import StandardScaler
+    np.random.seed(42)
+    df = pd.DataFrame({
+        "age": np.random.normal(35, 10, 100),
+        "target": np.random.choice([0, 1], 100),
+    })
+    dc = DataCleaner(random_state=42)
+    dc.load_df(df).set_target("target")
+    dc.prepare(test_size=0.3, custom_scalers={"age": StandardScaler()})
+    assert abs(dc.X_clean["age"].mean()) < 1e-10
+    assert abs(dc.X_clean["age"].std() - 1.0) < 0.2
+    assert "age" in dc.pipeline.custom_scalers
+
+
+# ---------------------------------------------------------------------------
+# Layer 3 — __main__.py
+# ---------------------------------------------------------------------------
+
+def test_main_module():
+    import subprocess
+    import sys
+    result = subprocess.run(
+        [sys.executable, "-m", "data_cleaner"],
+        capture_output=True, text=True, cwd="C:\\Users\\Mohammad Hossein\\Desktop\\AWS"
+    )
+    assert result.returncode == 0
+    assert "data_cleaner v" in result.stdout

@@ -84,6 +84,20 @@ class CleanPipeline:
         Fitted polynomial feature transformer.
     poly_numeric_cols : list of str
         Numeric columns used as input to ``poly_features``.
+    date_cols : list of str
+        Datetime columns expanded into year/month/day/etc.
+    date_feature_cols : list of str
+        Names of the extracted date feature columns.
+    missing_indicator_cols : list of str
+        Original columns for which ``{col}_missing`` indicators were added.
+    feature_selection_threshold : float or None
+        MI threshold below which features were removed.
+    feature_selection_removed : list of str
+        Columns removed by feature selection.
+    custom_encoders : dict of str -> encoder
+        Column -> fitted custom encoder instance.
+    custom_scalers : dict of str -> scaler
+        Column -> fitted custom scaler instance.
     """
 
     def __init__(self) -> None:
@@ -106,6 +120,13 @@ class CleanPipeline:
         self.outlier_bounds: Dict[str, Dict[str, float]] = {}
         self.poly_features: Any = None
         self.poly_numeric_cols: List[str] = []
+        self.date_cols: List[str] = []
+        self.date_feature_cols: List[str] = []
+        self.missing_indicator_cols: List[str] = []
+        self.feature_selection_threshold: Optional[float] = None
+        self.feature_selection_removed: List[str] = []
+        self.custom_encoders: Dict[str, Any] = {}
+        self.custom_scalers: Dict[str, Any] = {}
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply all cleaning steps to a raw DataFrame.
@@ -113,14 +134,18 @@ class CleanPipeline:
         Order of operations:
         1. Drop configured columns
         2. KNN-impute numeric nulls
-        3. Fill categorical nulls with stored mode values
-        4. Clip outliers if bounds were computed
-        5. Label-encode binary columns
-        6. One-hot encode categorical columns
-        7. Scale numeric columns
-        8. Generate polynomial features (if configured)
-        9. Zero-fill any missing expected columns
-        10. Return columns in the order of ``feature_cols``
+        3. Add missing indicators for imputed columns
+        4. Fill categorical nulls with stored mode values
+        5. Clip outliers if bounds were computed
+        6. Apply custom encoders (if configured)
+        7. Label-encode binary columns
+        8. One-hot encode categorical columns
+        9. Scale numeric columns (auto-selected scalers)
+        10. Apply custom scalers (if configured)
+        11. Expand datetime columns (if date_cols stored)
+        12. Generate polynomial features (if configured)
+        13. Zero-fill any missing expected columns
+        14. Return columns in the order of ``feature_cols``
 
         Parameters
         ----------
@@ -143,6 +168,11 @@ class CleanPipeline:
             if present:
                 df[present] = self.imputer.transform(df[present])
 
+        if self.missing_indicator_cols:
+            for col in self.missing_indicator_cols:
+                if col in df.columns:
+                    df[f"{col}_missing"] = df[col].isnull().astype(int)
+
         for col in self.categorical_cols:
             if col in df.columns:
                 fill_val = self.cat_impute_values.get(col)
@@ -153,6 +183,11 @@ class CleanPipeline:
             for col, bounds in self.outlier_bounds.items():
                 if col in df.columns:
                     df[col] = df[col].clip(bounds["lower"], bounds["upper"])
+
+        if self.custom_encoders:
+            for col, encoder in self.custom_encoders.items():
+                if col in df.columns:
+                    df[col] = encoder.transform(df[[col]] if hasattr(encoder, "transform") else df[col])
 
         for col in self.binary_cols:
             if col in df.columns:
@@ -170,6 +205,22 @@ class CleanPipeline:
         for col, scaler in self.scalers.items():
             if col in df.columns:
                 df[col] = scaler.transform(df[[col]])
+
+        if self.custom_scalers:
+            for col, scaler in self.custom_scalers.items():
+                if col in df.columns:
+                    df[col] = scaler.transform(df[[col]])
+
+        if self.date_cols:
+            for col in self.date_cols:
+                if col in df.columns:
+                    dt = df[col].dt
+                    df[f"{col}_year"] = dt.year
+                    df[f"{col}_month"] = dt.month
+                    df[f"{col}_day"] = dt.day
+                    df[f"{col}_dayofweek"] = dt.dayofweek
+                    df[f"{col}_weekend"] = (dt.dayofweek >= 5).astype(int)
+                    df.drop(columns=[col], inplace=True)
 
         if self.poly_features is not None and self.poly_numeric_cols:
             present = [c for c in self.poly_numeric_cols if c in df.columns]
@@ -563,6 +614,107 @@ class DataCleaner:
         self.pipeline.poly_numeric_cols = poly_cols
         return pd.concat([X, poly_df], axis=1)
 
+    def _extract_date_features(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Expand datetime columns into year/month/day/dayofweek/is_weekend.
+
+        Detects columns with ``datetime64`` dtype, extracts components,
+        and drops the original date column.
+
+        Returns
+        -------
+        pd.DataFrame
+            Feature matrix with date columns expanded.
+        """
+        date_cols = [
+            c for c in X.columns
+            if pd.api.types.is_datetime64_dtype(X[c])
+        ]
+        if not date_cols:
+            return X
+
+        self.pipeline.date_cols = date_cols
+        date_feature_cols = []
+        for col in date_cols:
+            dt = X[col].dt
+            X[f"{col}_year"] = dt.year
+            X[f"{col}_month"] = dt.month
+            X[f"{col}_day"] = dt.day
+            X[f"{col}_dayofweek"] = dt.dayofweek
+            X[f"{col}_weekend"] = (dt.dayofweek >= 5).astype(int)
+            date_feature_cols.extend([
+                f"{col}_year", f"{col}_month", f"{col}_day",
+                f"{col}_dayofweek", f"{col}_weekend",
+            ])
+            X.drop(columns=[col], inplace=True)
+        self.pipeline.date_feature_cols = date_feature_cols
+        logger.info(f"Extracted date features: {date_feature_cols}")
+        return X
+
+    def _add_missing_indicators(
+        self, X: pd.DataFrame, impute_cols: List[str]
+    ) -> pd.DataFrame:
+        """Add binary ``{col}_missing`` columns for imputed columns.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Feature matrix (after null row dropping).
+        impute_cols : list of str
+            Columns that will be imputed (had null ratio above threshold).
+
+        Returns
+        -------
+        pd.DataFrame
+            Feature matrix with missing indicator columns appended.
+        """
+        for col in impute_cols:
+            if col in X.columns:
+                X[f"{col}_missing"] = X[col].isnull().astype(int)
+        self.pipeline.missing_indicator_cols = impute_cols.copy()
+        if impute_cols:
+            logger.info(f"Added missing indicators for: {impute_cols}")
+        return X
+
+    def _feature_selection(
+        self, X: pd.DataFrame, y: pd.Series,
+        threshold: Union[str, float] = "auto",
+    ) -> pd.DataFrame:
+        """Remove weak features using mutual information.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Fully transformed feature matrix.
+        y : pd.Series
+            Target vector.
+        threshold : str or float
+            ``"auto"`` uses median MI; a float removes features with MI below it.
+
+        Returns
+        -------
+        pd.DataFrame
+            Feature matrix with weak columns removed.
+        """
+        numeric = X.select_dtypes(include="number").columns.tolist()
+        if not numeric or y.nunique() <= 1:
+            return X
+
+        from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
+        is_classification = y.nunique() < 20
+        fn = mutual_info_classif if is_classification else mutual_info_regression
+        mi = fn(X[numeric], y, random_state=self.random_state)
+        mi_series = pd.Series(mi, index=numeric)
+
+        actual_threshold = mi_series.median() if threshold == "auto" else float(threshold)
+        self.pipeline.feature_selection_threshold = actual_threshold
+
+        to_drop = mi_series[mi_series < actual_threshold].index.tolist()
+        if to_drop:
+            X = X.drop(columns=to_drop)
+            self.pipeline.feature_selection_removed = to_drop
+            logger.info(f"Feature selection dropped {len(to_drop)} weak columns: {to_drop}")
+        return X
+
     def _apply_smote(self, X_train: pd.DataFrame, y_train: pd.Series) -> Tuple[pd.DataFrame, pd.Series]:
         """Apply SMOTE oversampling if imbalanced-learn is available."""
         try:
@@ -648,13 +800,19 @@ class DataCleaner:
         feature_engineering: bool = False,
         handle_imbalance: bool = False,
         n_jobs: int = 1,
+        extract_date_features: bool = False,
+        add_missing_indicators: bool = False,
+        feature_selection: Optional[Union[str, float]] = None,
+        custom_encoders: Optional[Dict[str, Any]] = None,
+        custom_scalers: Optional[Dict[str, Any]] = None,
     ) -> SplitResult:
         """Execute the full cleaning and preparation pipeline.
 
         Pipeline order:
-            drop columns -> detect problem type -> auto-drop useless ->
-            detect types -> handle nulls -> handle outliers ->
-            feature engineering -> encode -> scale -> split -> optional SMOTE
+            drop columns -> detect problem type -> extract date features ->
+            auto-drop useless -> detect types -> handle nulls ->
+            add missing indicators -> handle outliers -> feature engineering ->
+            encode -> scale -> feature selection -> split -> optional SMOTE
 
         Parameters
         ----------
@@ -680,6 +838,20 @@ class DataCleaner:
             Apply SMOTE on imbalanced classification data (default False).
         n_jobs : int
             Parallel workers for scaler selection and outlier handling.
+        extract_date_features : bool
+            Expand datetime columns into year/month/day/dayofweek/weekend (default False).
+        add_missing_indicators : bool
+            Add ``{col}_missing`` binary columns for imputed columns (default False).
+        feature_selection : str or float, optional
+            ``"auto"`` drops features below median mutual information;
+            a float threshold drops features below that value.
+            ``None`` skips feature selection.
+        custom_encoders : dict of str -> encoder, optional
+            Column -> sklearn-compatible encoder instance. Overrides auto-encoding
+            for the specified columns.
+        custom_scalers : dict of str -> scaler, optional
+            Column -> sklearn-compatible scaler instance. Overrides auto-scaling
+            for the specified columns.
 
         Returns
         -------
@@ -704,6 +876,9 @@ class DataCleaner:
         y = df[self.target_col]
         X = df.drop(columns=[self.target_col])
         self.pipeline.problem_type = self._detect_problem_type(y)
+
+        if extract_date_features:
+            X = self._extract_date_features(X)
 
         if auto_drop_useless:
             X = self._auto_drop_useless(X)
@@ -730,6 +905,10 @@ class DataCleaner:
             merged, _, impute_cols = self._handle_nulls(merged, null_drop_ratio)
             X = merged.drop(columns=[self.target_col])
             y = merged[self.target_col]
+
+            if add_missing_indicators and impute_cols:
+                X = self._add_missing_indicators(X, impute_cols)
+
             if impute_cols:
                 X = self._impute_nulls(X, impute_cols)
 
@@ -739,6 +918,15 @@ class DataCleaner:
 
         if feature_engineering:
             X = self._feature_engineering(X)
+
+        if custom_encoders:
+            for col, encoder in custom_encoders.items():
+                if col in X.columns:
+                    X[col] = encoder.fit_transform(X[[col]] if hasattr(encoder, "fit_transform") else X[col])
+                    self.pipeline.custom_encoders[col] = encoder
+            encoder_cols = set(custom_encoders.keys())
+            binary_cols = [c for c in binary_cols if c not in encoder_cols]
+            categorical_cols = [c for c in categorical_cols if c not in encoder_cols]
 
         if auto_encode:
             X = self._encode_binary(X, binary_cols)
@@ -752,6 +940,15 @@ class DataCleaner:
             scalers = self._select_scalers(numeric_cols, X, n_jobs=n_jobs)
             self.pipeline.scalers = scalers
             X = self._scale_features(X, scalers)
+
+        if custom_scalers:
+            for col, scaler in custom_scalers.items():
+                if col in X.columns:
+                    X[col] = scaler.fit_transform(X[[col]])
+                    self.pipeline.custom_scalers[col] = scaler
+
+        if feature_selection is not None:
+            X = self._feature_selection(X, y, threshold=feature_selection)
 
         self.X_clean = X
         self.y_clean = y
