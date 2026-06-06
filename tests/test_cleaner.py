@@ -218,9 +218,10 @@ def test_validate_schema_fails(dc):
 # ---------------------------------------------------------------------------
 
 def test_auto_fix_dtypes(dc):
-    dc.df["raw_date"] = "2024-01-01"
+    dc.df["raw_date"] = pd.Series(["2024-01-01"] * len(dc.df), dtype=object)
+    dc.df["raw_num"] = pd.Series(["1,234"] * len(dc.df), dtype=object)
     fixes = dc.auto_fix_dtypes()
-    assert len(fixes) >= 1
+    assert len([f for f in fixes if "numeric" in f]) >= 1
 
 
 # ---------------------------------------------------------------------------
