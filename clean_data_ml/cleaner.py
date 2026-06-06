@@ -1171,8 +1171,7 @@ class DataCleaner:
                 elif expected == "datetime" and not pd.api.types.is_datetime64_dtype(actual):
                     issues.append(f"Column '{col}' is {actual}, expected datetime")
                 elif expected == "string" and not (
-<｜｜DSML｜｜parameter name="oldString" string="true">                    pd.api.types.is_string_dtype(actual)
-<｜｜DSML｜｜parameter name="newString" string="true">                    pd.api.types.is_string_dtype(actual) or pd.api.types.is_object_dtype(actual)
+                    pd.api.types.is_string_dtype(actual) or pd.api.types.is_object_dtype(actual)
                 ):
                     issues.append(f"Column '{col}' is {actual}, expected string")
 
