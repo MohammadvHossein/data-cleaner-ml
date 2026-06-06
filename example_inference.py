@@ -1,4 +1,4 @@
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 import pandas as pd
 from sklearn.svm import SVC
 import joblib

@@ -4,7 +4,7 @@ with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="data_cleaner",
+    name="clean_data_ml",
     version="1.2.0",
     description="Automatic data cleaning and standardization for ML pipelines",
     long_description=long_description,

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from data_cleaner import DataCleaner, stats
+from clean_data_ml import DataCleaner, stats
 
 
 # ---------------------------------------------------------------------------

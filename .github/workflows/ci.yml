@@ -30,16 +30,16 @@ jobs:
       - name: Lint with flake8
         run: |
           pip install flake8
-          flake8 data_cleaner/ --max-line-length=120 --ignore=E402,W503
+          flake8 clean_data_ml/ --max-line-length=120 --ignore=E402,W503
 
       - name: Test import
         run: |
-          python -c "from data_cleaner import DataCleaner; print('Import OK')"
+          python -c "from clean_data_ml import DataCleaner; print('Import OK')"
 
       - name: Run tests
         run: |
           pip install pytest pytest-cov
-          pytest tests/ --cov=data_cleaner --tb=short
+          pytest tests/ --cov=clean_data_ml --tb=short
 
       - name: Run example
         run: |

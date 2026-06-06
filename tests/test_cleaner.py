@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 
 
 # ---------------------------------------------------------------------------
@@ -368,8 +368,8 @@ def test_main_module():
     import subprocess
     import sys
     result = subprocess.run(
-        [sys.executable, "-m", "data_cleaner"],
+        [sys.executable, "-m", "clean_data_ml"],
         capture_output=True, text=True
     )
     assert result.returncode == 0
-    assert "data_cleaner v" in result.stdout
+    assert "clean_data_ml v" in result.stdout

@@ -39,22 +39,22 @@
 ### نصب از PyPI
 
 ```bash
-pip install data-cleaner
+pip install clean-data-ml
 ```
 
 ### نصب با قابليت‌هاي اضافي
 
 ```bash
-pip install data-cleaner[plot]       # و matplotlib, seaborn براي تصويرسازي
-pip install data-cleaner[imbalance]   # SMOTE براي
-pip install data-cleaner[all]         # همه قابليت‌ها
+pip install clean-data-ml[plot]       # و matplotlib, seaborn براي تصويرسازي
+pip install clean-data-ml[imbalance]   # SMOTE براي
+pip install clean-data-ml[all]         # همه قابليت‌ها
 ```
 
 ### نصب از سورس
 
 ```bash
-git clone https://github.com/MohammadvHossein/data_cleaner.git
-cd data_cleaner
+git clone https://github.com/MohammadvHossein/clean-data-ml.git
+cd clean_data_ml
 pip install -e .
 pip install -e .[all]
 ```
@@ -64,7 +64,7 @@ pip install -e .[all]
 ## شروع سريع
 
 ```python
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 from sklearn.svm import SVC
 
 dc = DataCleaner()
@@ -574,12 +574,12 @@ dc.export_cleaned("cleaned_with_target.xlsx", include_target=True)
 
 ## آزمون‌هاي آماري (Stats Module)
 
-ماژول `data_cleaner.stats` بيش از 20 تابع آزمون آماري و يك كلاس `StatisticalTestSuite` ارائه مي‌دهد.
+ماژول `clean_data_ml.stats` بيش از 20 تابع آزمون آماري و يك كلاس `StatisticalTestSuite` ارائه مي‌دهد.
 
 ### توابع مستقل
 
 ```python
-from data_cleaner import stats
+from clean_data_ml import stats
 import pandas as pd
 
 # آزمون نرمال بودن
@@ -637,7 +637,7 @@ result = stats.ab_test_proportion(control_series, treatment_series)
 اين كلاس با `DataCleaner` تركيب مي‌شود و آزمون‌ها را روي داده بارگذاري‌شده اجرا مي‌كند:
 
 ```python
-from data_cleaner import DataCleaner, stats
+from clean_data_ml import DataCleaner, stats
 
 dc = DataCleaner()
 dc.load_df(data).set_target("purchased")
@@ -696,14 +696,14 @@ print(suite.summary())
 
 ## ماژول تصويرسازي (Plotting)
 
-ماژول اختياري `data_cleaner.plotting` نياز به `matplotlib` و `seaborn` دارد:
+ماژول اختياري `clean_data_ml.plotting` نياز به `matplotlib` و `seaborn` دارد:
 
 ```bash
-pip install data-cleaner[plot]
+pip install clean-data-ml[plot]
 ```
 
 ```python
-from data_cleaner import plotting
+from clean_data_ml import plotting
 
 # گزارش مقادير گمشده (نمودار ميلي)
 plotting.plot_null_report(dc)
@@ -727,7 +727,7 @@ plotting.plot_before_after(dc)  # نياز به prepare() دارد
 ### مرحله 1: آموزش و ذخيره Pipeline
 
 ```python
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 import pandas as pd
 from sklearn.svm import SVC
 import joblib
@@ -808,7 +808,7 @@ dc.save_pipeline("full_pipeline.pkl")
 ### مرحله 2: Inference روي داده جديد
 
 ```python
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 import pandas as pd
 from sklearn.svm import SVC
 import joblib
@@ -839,7 +839,7 @@ for i, (pred, prob) in enumerate(zip(predictions, probabilities)):
 ### مرحله 3: تحليل آماري
 
 ```python
-from data_cleaner import DataCleaner, stats
+from clean_data_ml import DataCleaner, stats
 
 dc = DataCleaner()
 dc.load_df(data)
@@ -927,8 +927,8 @@ X_train, X_test, y_train, y_test = dc.prepare(n_jobs=-1)  # استفاده از 
 
 ## منابع
 
-- **GitHub**: https://github.com/MohammadvHossein/data_cleaner
-- **PyPI**: https://pypi.org/project/data-cleaner/
+- **GitHub**: https://github.com/MohammadvHossein/clean-data-ml
+- **PyPI**: https://pypi.org/project/clean-data-ml/
 - **نويسنده**: Mohammad Hossein Habibpour
 - **ايميل**: habibpour.programming@gmail.com
 - **مجوز**: MIT

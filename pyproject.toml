@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "data_cleaner"
+name = "clean-data-ml"
 version = "1.2.0"
 description = "Automatic data cleaning and standardization for ML pipelines"
 readme = "README.md"
@@ -65,10 +65,10 @@ Repository = "https://github.com/MohammadvHossein/data_cleaner"
 Changelog = "https://github.com/MohammadvHossein/data_cleaner/releases"
 
 [project.scripts]
-data-cleaner = "data_cleaner.__main__:main"
+clean-data-ml = "clean_data_ml.__main__:main"
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["data_cleaner*"]
+include = ["clean_data_ml*"]

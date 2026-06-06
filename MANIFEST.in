@@ -1,8 +1,8 @@
 include README.md
 include LICENSE
 include pyproject.toml
-recursive-include data_cleaner *.py
-recursive-include data_cleaner py.typed
+recursive-include clean_data_ml *.py
+recursive-include clean_data_ml py.typed
 include example_train.py example_inference.py
 graft tests
 global-exclude __pycache__

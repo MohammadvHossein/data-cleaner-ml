@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MaxAbsScaler, MinMaxScaler, RobustScaler, StandardScaler
 
-from data_cleaner.auto_scaler import select_best_scaler
+from clean_data_ml.auto_scaler import select_best_scaler
 
 
 def test_normal_no_outliers_returns_standard():

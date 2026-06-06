@@ -1,9 +1,9 @@
 # DataCleaner
 
-[![PyPI version](https://img.shields.io/pypi/v/data-cleaner.svg)](https://pypi.org/project/data-cleaner/)
-[![Python versions](https://img.shields.io/pypi/pyversions/data-cleaner.svg)](https://pypi.org/project/data-cleaner/)
-[![License](https://img.shields.io/pypi/l/data-cleaner.svg)](https://github.com/MohammadvHossein/data_cleaner/blob/main/LICENSE)
-[![CI](https://github.com/MohammadvHossein/data_cleaner/actions/workflows/ci.yml/badge.svg)](https://github.com/MohammadvHossein/data_cleaner/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/clean-data-ml.svg)](https://pypi.org/project/clean-data-ml/)
+[![Python versions](https://img.shields.io/pypi/pyversions/clean-data-ml.svg)](https://pypi.org/project/clean-data-ml/)
+[![License](https://img.shields.io/pypi/l/clean-data-ml.svg)](https://github.com/MohammadvHossein/clean-data-ml/blob/main/LICENSE)
+[![CI](https://github.com/MohammadvHossein/clean-data-ml/actions/workflows/ci.yml/badge.svg)](https://github.com/MohammadvHossein/clean-data-ml/actions/workflows/ci.yml)
 
 **Automated data cleaning & standardization pipeline for ML projects.**
 
@@ -45,22 +45,22 @@ DataCleaner takes raw CSV/Excel data and transforms it into production-ready ML 
 ### Install
 
 ```bash
-pip install data-cleaner
+pip install clean-data-ml
 ```
 
 With optional extras:
 
 ```bash
-pip install data-cleaner[plot]       # visualization (matplotlib, seaborn)
-pip install data-cleaner[imbalance]   # SMOTE oversampling support
-pip install data-cleaner[all]         # all optional features
+pip install clean-data-ml[plot]       # visualization (matplotlib, seaborn)
+pip install clean-data-ml[imbalance]   # SMOTE oversampling support
+pip install clean-data-ml[all]         # all optional features
 ```
 
 For a development (editable) install from source:
 
 ```bash
-git clone https://github.com/MohammadvHossein/data_cleaner.git
-cd data_cleaner
+git clone https://github.com/MohammadvHossein/clean-data-ml.git
+cd clean-data-ml
 pip install -e .
 pip install -e .[all]                # including all extras
 ```
@@ -68,7 +68,7 @@ pip install -e .[all]                # including all extras
 ### Minimal example
 
 ```python
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 from sklearn.svm import SVC
 
 dc = DataCleaner()
@@ -90,7 +90,7 @@ print(f"Accuracy: {model.score(X_test, y_test):.2f}")
 ### 1. Train & save pipeline
 
 ```python
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 import pandas as pd
 from sklearn.svm import SVC
 import joblib
@@ -124,7 +124,7 @@ dc.save_pipeline("my_pipeline.pkl")
 ### 2. Inference on new data
 
 ```python
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 import pandas as pd
 from sklearn.svm import SVC
 import joblib
@@ -242,7 +242,7 @@ You can override this with `prepare(null_drop_ratio=0.1)`.
 
 ## Statistical Test Suite
 
-The `data_cleaner.stats` module provides a comprehensive set of statistical tests for data analysis:
+The `clean_data_ml.stats` module provides a comprehensive set of statistical tests for data analysis:
 
 ### Standalone Functions
 
@@ -268,7 +268,7 @@ The `data_cleaner.stats` module provides a comprehensive set of statistical test
 ### StatisticalTestSuite (integration with DataCleaner)
 
 ```python
-from data_cleaner import DataCleaner, stats
+from clean_data_ml import DataCleaner, stats
 
 dc = DataCleaner()
 dc.load_df(data).set_target("purchased")
@@ -286,7 +286,7 @@ print(suite.summary())
 
 ## Visualization Module
 
-The `data_cleaner.plotting` module (requires `pip install -e .[plot]`):
+The `clean_data_ml.plotting` module (requires `pip install -e .[plot]`):
 
 | Function | Description |
 |----------|-------------|
@@ -298,7 +298,7 @@ The `data_cleaner.plotting` module (requires `pip install -e .[plot]`):
 ## Project Structure
 
 ```
-data_cleaner/
+clean_data_ml/
   __init__.py       Package exports
   cleaner.py        DataCleaner + CleanPipeline classes
   auto_scaler.py    Automatic scaler selection logic

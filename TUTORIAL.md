@@ -39,22 +39,22 @@
 ### Install from PyPI
 
 ```bash
-pip install data-cleaner
+pip install clean-data-ml
 ```
 
 ### Install with Optional Extras
 
 ```bash
-pip install data-cleaner[plot]       # visualization (matplotlib, seaborn)
-pip install data-cleaner[imbalance]   # SMOTE oversampling support
-pip install data-cleaner[all]         # all optional features
+pip install clean-data-ml[plot]       # visualization (matplotlib, seaborn)
+pip install clean-data-ml[imbalance]   # SMOTE oversampling support
+pip install clean-data-ml[all]         # all optional features
 ```
 
 ### Install from Source
 
 ```bash
-git clone https://github.com/MohammadvHossein/data_cleaner.git
-cd data_cleaner
+git clone https://github.com/MohammadvHossein/clean-data-ml.git
+cd clean_data_ml
 pip install -e .
 pip install -e .[all]
 ```
@@ -64,7 +64,7 @@ pip install -e .[all]
 ## Quick Start
 
 ```python
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 from sklearn.svm import SVC
 
 dc = DataCleaner()
@@ -573,12 +573,12 @@ Supported formats: CSV and Excel (.xlsx)
 
 ## Statistical Tests (Stats Module)
 
-The `data_cleaner.stats` module provides 20+ standalone statistical functions and a `StatisticalTestSuite` class.
+The `clean_data_ml.stats` module provides 20+ standalone statistical functions and a `StatisticalTestSuite` class.
 
 ### Standalone Functions
 
 ```python
-from data_cleaner import stats
+from clean_data_ml import stats
 import pandas as pd
 
 # Normality test
@@ -636,7 +636,7 @@ result = stats.ab_test_proportion(control_series, treatment_series)
 This class integrates with `DataCleaner` and runs tests on the loaded data:
 
 ```python
-from data_cleaner import DataCleaner, stats
+from clean_data_ml import DataCleaner, stats
 
 dc = DataCleaner()
 dc.load_df(data).set_target("purchased")
@@ -695,14 +695,14 @@ Sample `summary()` output:
 
 ## Visualization Module (Plotting)
 
-The optional `data_cleaner.plotting` module requires `matplotlib` and `seaborn`:
+The optional `clean_data_ml.plotting` module requires `matplotlib` and `seaborn`:
 
 ```bash
-pip install data-cleaner[plot]
+pip install clean-data-ml[plot]
 ```
 
 ```python
-from data_cleaner import plotting
+from clean_data_ml import plotting
 
 # Null value report (bar chart)
 plotting.plot_null_report(dc)
@@ -726,7 +726,7 @@ plotting.plot_before_after(dc)  # requires .prepare() to have been called
 ### Step 1: Train and Save Pipeline
 
 ```python
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 import pandas as pd
 from sklearn.svm import SVC
 import joblib
@@ -807,7 +807,7 @@ dc.save_pipeline("full_pipeline.pkl")
 ### Step 2: Inference on New Data
 
 ```python
-from data_cleaner import DataCleaner
+from clean_data_ml import DataCleaner
 import pandas as pd
 from sklearn.svm import SVC
 import joblib
@@ -838,7 +838,7 @@ for i, (pred, prob) in enumerate(zip(predictions, probabilities)):
 ### Step 3: Statistical Analysis
 
 ```python
-from data_cleaner import DataCleaner, stats
+from clean_data_ml import DataCleaner, stats
 
 dc = DataCleaner()
 dc.load_df(data)
@@ -926,8 +926,8 @@ Use `export_cleaned()` to get the cleaned dataset for analysis in other tools (E
 
 ## Resources
 
-- **GitHub**: https://github.com/MohammadvHossein/data_cleaner
-- **PyPI**: https://pypi.org/project/data-cleaner/
+- **GitHub**: https://github.com/MohammadvHossein/clean-data-ml
+- **PyPI**: https://pypi.org/project/clean-data-ml/
 - **Author**: Mohammad Hossein Habibpour
 - **Email**: habibpour.programming@gmail.com
 - **License**: MIT

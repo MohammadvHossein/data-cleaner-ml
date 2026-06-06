@@ -1,6 +1,6 @@
 """Optional visualization module for DataCleaner.
 
-Requires matplotlib and seaborn (install with ``pip install data-cleaner[plot]``).
+Requires matplotlib and seaborn (install with ``pip install clean-data-ml[plot]``).
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ def plot_null_report(dc: "DataCleaner") -> None:
         A DataCleaner instance with loaded data.
     """
     if not _HAS_MPL:
-        logger.warning("matplotlib/seaborn not installed. Install with: pip install data-cleaner[plot]")
+        logger.warning("matplotlib/seaborn not installed. Install with: pip install clean-data-ml[plot]")
         return
     if dc.df is None:
         logger.error("No data loaded")
@@ -66,7 +66,7 @@ def plot_distributions(dc: "DataCleaner", cols: Optional[List[str]] = None) -> N
         Subset of numeric columns to plot. If None, all numeric columns are used.
     """
     if not _HAS_MPL:
-        logger.warning("matplotlib/seaborn not installed. Install with: pip install data-cleaner[plot]")
+        logger.warning("matplotlib/seaborn not installed. Install with: pip install clean-data-ml[plot]")
         return
     if dc.df is None:
         logger.error("No data loaded")
@@ -102,7 +102,7 @@ def plot_correlation(dc: "DataCleaner", figsize: Tuple[int, int] = (10, 8)) -> N
         Figure size passed to matplotlib (default (10, 8)).
     """
     if not _HAS_MPL:
-        logger.warning("matplotlib/seaborn not installed. Install with: pip install data-cleaner[plot]")
+        logger.warning("matplotlib/seaborn not installed. Install with: pip install clean-data-ml[plot]")
         return
     if dc.df is None:
         logger.error("No data loaded")
@@ -130,7 +130,7 @@ def plot_before_after(dc: "DataCleaner") -> None:
         A fitted DataCleaner instance.
     """
     if not _HAS_MPL:
-        logger.warning("matplotlib/seaborn not installed. Install with: pip install data-cleaner[plot]")
+        logger.warning("matplotlib/seaborn not installed. Install with: pip install clean-data-ml[plot]")
         return
     if not dc.is_fitted:
         logger.error("Must call .prepare() first")
