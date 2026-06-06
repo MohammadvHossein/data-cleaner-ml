@@ -6,7 +6,6 @@ to pick the most appropriate sklearn scaler.
 
 from typing import Union
 
-import numpy as np
 import pandas as pd
 from scipy import stats as sp_stats
 from sklearn.preprocessing import (

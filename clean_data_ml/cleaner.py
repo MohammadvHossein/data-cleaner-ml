@@ -1170,7 +1170,10 @@ class DataCleaner:
                     issues.append(f"Column '{col}' is {actual}, expected numeric")
                 elif expected == "datetime" and not pd.api.types.is_datetime64_dtype(actual):
                     issues.append(f"Column '{col}' is {actual}, expected datetime")
-                elif expected == "string" and not pd.api.types.is_string_dtype(actual) and not pd.api.types.is_object_dtype(actual):
+                elif expected == "string" and not (
+<｜｜DSML｜｜parameter name="oldString" string="true">                    pd.api.types.is_string_dtype(actual)
+<｜｜DSML｜｜parameter name="newString" string="true">                    pd.api.types.is_string_dtype(actual) or pd.api.types.is_object_dtype(actual)
+                ):
                     issues.append(f"Column '{col}' is {actual}, expected string")
 
         if issues:
@@ -1303,7 +1306,10 @@ class DataCleaner:
                 fig.colorbar(im, ax=ax, shrink=0.8)
                 ax.set_title("Correlation Heatmap", fontsize=12)
                 b64 = _img_to_b64(fig)
-                corr_html = f'<div class="section"><h2>Correlation Heatmap</h2><img src="data:image/png;base64,{b64}" style="max-width:100%;"></div>'
+                corr_html = (
+                    '<div class="section"><h2>Correlation Heatmap</h2>'
+                    f'<img src="data:image/png;base64,{b64}" style="max-width:100%;"></div>'
+                )
 
             num_plot_cols = [c for c in numeric_df.columns if numeric_df[c].nunique() > 2]
             if num_plot_cols:
@@ -1316,7 +1322,10 @@ class DataCleaner:
                     s = numeric_df[col].dropna()
                     axes[i].hist(s, bins=30, color="#3498db", edgecolor="white", alpha=0.8)
                     axes[i].axvline(s.mean(), color="red", linestyle="--", linewidth=1.5, label=f"mean={s.mean():.2f}")
-                    axes[i].axvline(s.median(), color="green", linestyle="--", linewidth=1.5, label=f"med={s.median():.2f}")
+                    axes[i].axvline(
+                        s.median(), color="green", linestyle="--",
+                        linewidth=1.5, label=f"med={s.median():.2f}",
+                    )
                     axes[i].set_title(col, fontsize=10)
                     axes[i].tick_params(labelsize=7)
                     axes[i].legend(fontsize=6)
@@ -1325,7 +1334,10 @@ class DataCleaner:
                 fig.suptitle("Numeric Column Distributions", fontsize=14, y=1.01)
                 fig.tight_layout()
                 b64 = _img_to_b64(fig)
-                hist_html = f'<div class="section"><h2>Distributions</h2><img src="data:image/png;base64,{b64}" style="max-width:100%;"></div>'
+                hist_html = (
+                    '<div class="section"><h2>Distributions</h2>'
+                    f'<img src="data:image/png;base64,{b64}" style="max-width:100%;"></div>'
+                )
 
             cat_plot_cols = [c for c in cat_df.columns if 1 < cat_df[c].nunique() <= 20]
             if cat_plot_cols:
@@ -1347,10 +1359,16 @@ class DataCleaner:
                 fig.suptitle("Categorical Column Analysis", fontsize=14, y=1.01)
                 fig.tight_layout()
                 b64 = _img_to_b64(fig)
-                cat_bar_html = f'<div class="section"><h2>Categorical Columns</h2><img src="data:image/png;base64,{b64}" style="max-width:100%;"></div>'
+                cat_bar_html = (
+                    '<div class="section"><h2>Categorical Columns</h2>'
+                    f'<img src="data:image/png;base64,{b64}" style="max-width:100%;"></div>'
+                )
 
         except ImportError:
-            charts_html = '<div class="section"><div class="warn">Charts require matplotlib. Install: pip install matplotlib seaborn</div></div>'
+            charts_html = (
+                '<div class="section"><div class="warn">Charts require matplotlib.'
+                ' Install: pip install matplotlib seaborn</div></div>'
+            )
 
         def _fmt(val: Any) -> str:
             return f"{val:.4f}" if isinstance(val, float) else str(val)
@@ -1384,8 +1402,12 @@ class DataCleaner:
             else:
                 unique = df[col].nunique()
                 top = df[col].mode().iloc[0] if not df[col].mode().empty else ""
-                top_pct = (df[col].value_counts(normalize=True).iloc[0] * 100) if not df[col].value_counts().empty else 0
-                extra = f"<td colspan='9'><span class='chip'>{unique} unique</span> top: <b>{str(top)[:40]}</b> ({top_pct:.1f}%)</td>"
+                top_val = df[col].value_counts(normalize=True)
+                top_pct = (top_val.iloc[0] * 100) if not top_val.empty else 0
+                extra = (
+                    "<td colspan='9'><span class='chip'>{unique} unique</span>"
+                    f" top: <b>{str(top)[:40]}</b> ({top_pct:.1f}%)</td>"
+                )
 
             rows_html += (
                 f"<tr>"
@@ -1400,11 +1422,20 @@ class DataCleaner:
         for col in df.columns:
             np_ = null_pct[col]
             if np_ > 20:
-                quality_issues.append(f"<li><span class='badge badge-err'>HIGH NULLS</span> <b>{col}</b>: {np_}% missing</li>")
+                quality_issues.append(
+                    f"<li><span class='badge badge-err'>HIGH NULLS</span>"
+                    f" <b>{col}</b>: {np_}% missing</li>"
+                )
             elif np_ > 5:
-                quality_issues.append(f"<li><span class='badge badge-warn'>NULLS</span> <b>{col}</b>: {np_}% missing</li>")
+                quality_issues.append(
+                    f"<li><span class='badge badge-warn'>NULLS</span>"
+                    f" <b>{col}</b>: {np_}% missing</li>"
+                )
         if dup_count > 0:
-            quality_issues.append(f"<li><span class='badge badge-warn'>DUPLICATES</span> {dup_count} duplicate rows found</li>")
+            quality_issues.append(
+                f"<li><span class='badge badge-warn'>DUPLICATES</span>"
+                f" {dup_count} duplicate rows found</li>"
+            )
 
         quality_html = (
             "<div class='section'><h2>Data Quality Warnings</h2><ul>" + "".join(quality_issues) + "</ul></div>"
@@ -1420,29 +1451,39 @@ class DataCleaner:
 <title>Data Profile Report</title>
 <style>
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background: #f0f2f5; color: #1a1a2e; padding: 20px; }}
+  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', sans-serif; background: #f0f2f5; color: #1a1a2e; padding: 20px; }}
   .container {{ max-width: 1300px; margin: auto; }}
-  .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 30px; border-radius: 12px; margin-bottom: 24px; }}
+  .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff; padding: 30px; border-radius: 12px; margin-bottom: 24px; }}
   .header h1 {{ font-size: 28px; margin-bottom: 6px; }}
   .header p {{ opacity: 0.85; font-size: 14px; }}
-  .section {{ background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }}
-  .section h2 {{ font-size: 18px; color: #2c3e50; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #667eea; }}
+  .section {{ background: #fff; border-radius: 10px; padding: 24px;
+    margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }}
+  .section h2 {{ font-size: 18px; color: #2c3e50; margin-bottom: 16px;
+    padding-bottom: 8px; border-bottom: 2px solid #667eea; }}
   .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 0; }}
-  .stat-card {{ background: #f8f9fc; padding: 18px; border-radius: 10px; text-align: center; border: 1px solid #e8ecf4; }}
+  .stat-card {{ background: #f8f9fc; padding: 18px; border-radius: 10px;
+    text-align: center; border: 1px solid #e8ecf4; }}
   .stat-card .num {{ font-size: 30px; font-weight: 700; color: #667eea; }}
-  .stat-card .label {{ font-size: 12px; color: #7f8c8d; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }}
+  .stat-card .label {{ font-size: 12px; color: #7f8c8d; margin-top: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px; }}
   .table-wrap {{ overflow-x: auto; }}
   table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
-  th {{ background: #f8f9fc; font-weight: 600; color: #555; padding: 10px 8px; text-align: left; border-bottom: 2px solid #e8ecf4; white-space: nowrap; position: sticky; top: 0; }}
+  th {{ background: #f8f9fc; font-weight: 600; color: #555; padding: 10px 8px;
+    text-align: left; border-bottom: 2px solid #e8ecf4;
+    white-space: nowrap; position: sticky; top: 0; }}
   td {{ padding: 9px 8px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }}
   tr:hover {{ background: #f8f9ff; }}
   .bar {{ background: #eee; height: 14px; border-radius: 7px; overflow: hidden; min-width: 60px; }}
   .fill {{ height: 100%; background: linear-gradient(90deg, #e74c3c, #c0392b); border-radius: 7px; }}
-  .badge {{ display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }}
+  .badge {{ display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }}
   .badge-err {{ background: #fde8e8; color: #c0392b; }}
   .badge-warn {{ background: #fef5e7; color: #d68910; }}
   .badge-ok {{ background: #e8f8f5; color: #1abc9c; }}
-  .chip {{ display: inline-block; background: #eef2ff; padding: 2px 10px; border-radius: 10px; font-size: 11px; color: #667eea; font-weight: 600; }}
+  .chip {{ display: inline-block; background: #eef2ff; padding: 2px 10px;
+    border-radius: 10px; font-size: 11px; color: #667eea; font-weight: 600; }}
   .ok {{ color: #27ae60; font-weight: 500; }}
   .warn {{ background: #fef5e7; color: #d68910; padding: 12px; border-radius: 6px; font-size: 13px; }}
   .footer {{ text-align: center; color: #aaa; font-size: 12px; padding: 20px; }}
@@ -1456,7 +1497,9 @@ class DataCleaner:
 <div class="container">
 <div class="header">
   <h1>Data Profile Report</h1>
-  <p>{n} rows &times; {df.shape[1]} columns &nbsp;|&nbsp; {n_num} numeric, {n_cat} categorical &nbsp;|&nbsp; Generated on {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')}</p>
+  <p>{n} rows &times; {df.shape[1]} columns &nbsp;|&nbsp; {n_num} numeric,
+    {n_cat} categorical &nbsp;|&nbsp; Generated on
+    {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')}</p>
 </div>
 
 <div class="section">

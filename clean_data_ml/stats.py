@@ -8,7 +8,7 @@ with ``DataCleaner``.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -321,7 +321,10 @@ def z_test_proportion(successes: int, n: int, p_pop: float, alternative: str = "
         p = sp_stats.norm.cdf(z)
     else:
         raise ValueError(f"Unknown alternative: {alternative}")
-    return {"statistic": round(float(z), 4), "p_value": float(p), "p_hat": round(float(p_hat), 4), "method": "proportion z-test"}
+    return {
+        "statistic": round(float(z), 4), "p_value": float(p),
+        "p_hat": round(float(p_hat), 4), "method": "proportion z-test",
+    }
 
 
 def z_test_two_proportion(
@@ -394,7 +397,10 @@ def t_test_one_sample(series: pd.Series, pop_mean: float = 0) -> TestResult:
     if len(series) < 2:
         return {"statistic": None, "p_value": None, "note": "Insufficient samples"}
     stat, p = sp_stats.ttest_1samp(series, pop_mean)
-    return {"statistic": round(float(stat), 4), "p_value": float(p), "dof": len(series) - 1, "method": "one-sample t-test"}
+    return {
+        "statistic": round(float(stat), 4), "p_value": float(p),
+        "dof": len(series) - 1, "method": "one-sample t-test",
+    }
 
 
 def t_test_independent(series_a: pd.Series, series_b: pd.Series, equal_var: bool = True) -> TestResult:
@@ -936,7 +942,10 @@ class StatisticalTestSuite:
             Test result with significance, lift, CI.
         """
         self._require_data()
-        result = ab_test(self.dc.df[control_col], self.dc.df[treatment_col], metric_type=metric_type, alpha=alpha)  # type: ignore[index]
+        result = ab_test(
+            self.dc.df[control_col], self.dc.df[treatment_col],  # type: ignore[index]
+            metric_type=metric_type, alpha=alpha,
+        )
         self.results["ab_test"] = result
         return result
 
