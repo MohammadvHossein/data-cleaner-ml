@@ -437,7 +437,7 @@ class StatisticalTestSuite:
 
         for key, res in self.results.items():
             if key.startswith("z_") or key.startswith("t_"):
-                label = key.replace("z_", "Z-").replace("t_", "T-").replace("_", " ")
+                label = key[0].upper() + "-" + key[2:].replace("_", " ")
                 p = res.get("p_value")
                 if p is not None:
                     sig = "SIGNIFICANT" if p < 0.05 else "NOT significant"
@@ -451,7 +451,9 @@ class StatisticalTestSuite:
             if res.get("significant") is not None:
                 lines.append(f"  Significant: {'YES' if res['significant'] else 'NO'} (p={res['p_value']:.4f})")
                 lines.append(f"  Lift: {res.get('lift_pct')}%")
-                lines.append(f"  CI: {res.get('ci')}")
+                ci = res.get('ci')
+                if ci:
+                    lines.append(f"  CI: ({ci[0]:.4f}, {ci[1]:.4f})")
                 lines.append(f"  Control: {res.get('control_mean') or res.get('control_rate')} (n={res.get('n_control')})")
                 lines.append(f"  Treatment: {res.get('treatment_mean') or res.get('treatment_rate')} (n={res.get('n_treatment')})")
             else:

@@ -50,10 +50,11 @@ def plot_distributions(dc, cols=None):
     if n == 1:
         axes = [axes]
     for i, col in enumerate(df.columns):
-        sns.histplot(df[col].dropna(), kde=True, ax=axes[i][0])
-        axes[i][0].set_title(f"{col} - Distribution")
-        sns.boxplot(x=df[col].dropna(), ax=axes[i][1])
-        axes[i][1].set_title(f"{col} - Boxplot")
+        ax_hist, ax_box = axes[i][0] if n > 1 else (axes[0], axes[1])
+        sns.histplot(df[col].dropna(), kde=True, ax=ax_hist)
+        ax_hist.set_title(f"{col} - Distribution")
+        sns.boxplot(x=df[col].dropna(), ax=ax_box)
+        ax_box.set_title(f"{col} - Boxplot")
     plt.tight_layout()
     plt.show()
 
@@ -93,9 +94,10 @@ def plot_before_after(dc):
     if n == 1:
         axes = [axes]
     for i, col in enumerate(common):
-        axes[i][0].hist(raw[col].dropna(), bins=20, alpha=0.7)
-        axes[i][0].set_title(f"{col} - Before")
-        axes[i][1].hist(clean[col].dropna(), bins=20, alpha=0.7, color="green")
-        axes[i][1].set_title(f"{col} - After")
+        ax_before, ax_after = axes[i][0] if n > 1 else (axes[0], axes[1])
+        ax_before.hist(raw[col].dropna(), bins=20, alpha=0.7)
+        ax_before.set_title(f"{col} - Before")
+        ax_after.hist(clean[col].dropna(), bins=20, alpha=0.7, color="green")
+        ax_after.set_title(f"{col} - After")
     plt.tight_layout()
     plt.show()

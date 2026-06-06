@@ -32,20 +32,15 @@ DataCleaner takes raw CSV/Excel data and transforms it into production-ready ML 
 ### Install
 
 ```bash
-pip install -r requirements.txt
-```
-
-Or install the package in editable mode:
-
-```bash
 pip install -e .
 ```
 
 Optional dependencies for extra features:
 
 ```bash
-pip install -e .[imbalance]    # SMOTE oversampling support
-pip install -e .[all]          # all optional features
+pip install -e .[plot]       # visualization (matplotlib, seaborn)
+pip install -e .[imbalance]  # SMOTE oversampling support
+pip install -e .[all]        # all optional features
 ```
 
 ### Minimal example
@@ -207,6 +202,77 @@ You can override this with `prepare(null_drop_ratio=0.1)`.
 
 ---
 
+## Statistical Test Suite
+
+The `data_cleaner.stats` module provides a comprehensive set of statistical tests for data analysis:
+
+### Standalone Functions
+
+| Function | Description |
+|----------|-------------|
+| `normality_test(series, method)` | Shapiro-Wilk, D'Agostino, or Anderson-Darling normality test |
+| `correlation_test(x, y, method)` | Pearson, Spearman, or Kendall correlation |
+| `ks_test(a, b)` | Kolmogorov-Smirnov (two-sample distribution test) |
+| `chi_square_test(a, b)` | Chi-square test of independence |
+| `variance_test(a, b, method)` | Levene, Bartlett, or Fligner test for equal variance |
+| `anova_one_way(*groups)` | One-way ANOVA |
+| `z_test_one_sample(series, pop_mean)` | One-sample z-test for mean |
+| `z_test_two_sample(a, b)` | Two-sample z-test for mean |
+| `z_test_proportion(successes, n, p)` | One-sample proportion z-test |
+| `z_test_two_proportion(s1, n1, s2, n2)` | Two-sample proportion z-test |
+| `t_test_one_sample(series, pop_mean)` | One-sample t-test |
+| `t_test_independent(a, b)` | Independent two-sample t-test |
+| `t_test_paired(a, b)` | Paired t-test |
+| `ab_test_mean(control, treatment)` | A/B test on means (lift, CI, significance) |
+| `ab_test_proportion(control, treatment)` | A/B test on proportions |
+| `mutual_information(X, y)` | Mutual Information between features and target |
+
+### StatisticalTestSuite (integration with DataCleaner)
+
+```python
+from data_cleaner import DataCleaner, stats
+
+dc = DataCleaner()
+dc.load_df(data).set_target("purchased")
+
+suite = stats.StatisticalTestSuite(dc)
+suite.test_normality()
+suite.test_correlations(target_col="purchased")
+suite.test_chi_square("gender", "city")
+suite.test_anova("age", "city")
+suite.test_z_one_sample("age", pop_mean=35)
+suite.test_t_independent("age", "score")
+suite.test_ab_by_group("converted", "group", "A", "B", metric_type="proportion")
+print(suite.summary())
+```
+
+## Visualization Module
+
+The `data_cleaner.plotting` module (requires `pip install -e .[plot]`):
+
+| Function | Description |
+|----------|-------------|
+| `plot_null_report(dc)` | Bar charts of null counts and percentages |
+| `plot_distributions(dc, cols)` | Histograms + boxplots for numeric columns |
+| `plot_correlation(dc)` | Correlation heatmap |
+| `plot_before_after(dc)` | Compare raw vs cleaned distributions |
+
+## Project Structure
+
+```
+data_cleaner/
+  __init__.py       Package exports
+  cleaner.py        DataCleaner + CleanPipeline classes
+  auto_scaler.py    Automatic scaler selection logic
+  stats.py          Statistical test suite (t-test, z-test, AB test, etc.)
+  plotting.py       Optional visualization module
+setup.py              Package metadata
+example_train.py      Training example
+example_inference.py  Inference example
+.gitignore            Ignored files
+README.md             This file
+```
+
 ## Additional Features
 
 ### Auto-Drop Useless Columns
@@ -265,22 +331,6 @@ Then assigns the optimal scaler:
 | Bounded [0, 1] | `MinMaxScaler` |
 | Sparse | `MaxAbsScaler` |
 | Default | `StandardScaler` |
-
----
-
-## Project Structure
-
-```
-data_cleaner/
-  __init__.py       Package exports
-  cleaner.py        DataCleaner + CleanPipeline classes
-  auto_scaler.py    Automatic scaler selection logic
-setup.py              Package metadata
-example_train.py      Training example
-example_inference.py  Inference example
-.gitignore            Ignored files
-README.md             This file
-```
 
 ---
 

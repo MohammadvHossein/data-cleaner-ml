@@ -1,6 +1,5 @@
 from data_cleaner import DataCleaner
 import pandas as pd
-from sklearn.svm import SVC
 import joblib
 
 print("=== Step 1: Load saved pipeline & model ===")

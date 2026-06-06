@@ -29,6 +29,8 @@ __pycache__/
 
 # Exported cleaned data
 cleaned_*
+*.csv
+*xlsx
 
 # OS
 .DS_Store

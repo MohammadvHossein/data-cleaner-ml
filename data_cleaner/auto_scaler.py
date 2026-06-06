@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import stats
+from scipy import stats as sp_stats
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler
 
 
@@ -18,10 +18,10 @@ def select_best_scaler(series):
 
     is_normal = False
     if len(series) < 5000:
-        _, p_value = stats.shapiro(series.sample(min(len(series), 500), random_state=42))
+        _, p_value = sp_stats.shapiro(series.sample(min(len(series), 500), random_state=42))
         is_normal = p_value > 0.05
     else:
-        _, p_value = stats.normaltest(series.sample(1000, random_state=42))
+        _, p_value = sp_stats.normaltest(series.sample(1000, random_state=42))
         is_normal = p_value > 0.05
 
     col_min, col_max = series.min(), series.max()

@@ -266,15 +266,18 @@ class DataCleaner:
             cols = [c for c in X.columns if pd.api.types.is_numeric_dtype(X[c]) and X[c].nunique() > 2]
             if not cols:
                 return X
-            from functools import partial
-            def _clip_col(col):
+            def _compute_bounds(col):
                 Q1, Q3 = X[col].quantile(0.25), X[col].quantile(0.75)
                 IQR = Q3 - Q1
                 return col, Q1 - 1.5 * IQR, Q3 + 1.5 * IQR
-            results = Parallel(n_jobs=n_jobs)(delayed(_clip_col)(c) for c in cols)
-            for col, lo, hi in results:
-                X[col] = X[col].clip(lo, hi)
-                self.pipeline.outlier_bounds[col] = {"lower": lo, "upper": hi}
+            results = Parallel(n_jobs=n_jobs)(delayed(_compute_bounds)(c) for c in cols)
+            bounds = {col: (lo, hi) for col, lo, hi in results}
+            self.pipeline.outlier_bounds = {col: {"lower": lo, "upper": hi} for col, (lo, hi) in bounds.items()}
+            for col, (lo, hi) in bounds.items():
+                if method == "clip":
+                    X[col] = X[col].clip(lo, hi)
+                elif method == "remove":
+                    X = X[(X[col] >= lo) & (X[col] <= hi)]
             return X
         bounds = {}
         for col in X.columns:
@@ -379,8 +382,6 @@ class DataCleaner:
 
         y = df[self.target_col]
         X = df.drop(columns=[self.target_col])
-
-        self.pipeline.feature_cols = X.columns.tolist()
 
         self.pipeline.problem_type = self._detect_problem_type(y)
 
@@ -643,7 +644,7 @@ class DataCleaner:
                 cols_per_row = 3
                 n_rows = (n_plots + cols_per_row - 1) // cols_per_row
                 fig, axes = plt.subplots(n_rows, cols_per_row, figsize=(14, 3.5 * n_rows))
-                axes = axes.flatten() if n_rows > 1 else [axes] if n_plots == 1 else axes
+                axes = axes.flatten()
                 for i, col in enumerate(num_plot_cols):
                     s = numeric_df[col].dropna()
                     axes[i].hist(s, bins=30, color="#3498db", edgecolor="white", alpha=0.8)
@@ -665,7 +666,7 @@ class DataCleaner:
                 cols_per_row = 3
                 n_rows = (n_plots + cols_per_row - 1) // cols_per_row
                 fig, axes = plt.subplots(n_rows, cols_per_row, figsize=(14, 3.5 * n_rows))
-                axes = axes.flatten() if n_rows > 1 else [axes] if n_plots == 1 else axes
+                axes = axes.flatten()
                 for i, col in enumerate(cat_plot_cols):
                     vc = df[col].value_counts().head(10)
                     colors = plt.cm.Set3(range(len(vc)))
