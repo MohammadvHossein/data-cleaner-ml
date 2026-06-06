@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clean-data-ml"
-version = "1.2.0"
+version = "1.2.1"
 description = "Automatic data cleaning and standardization for ML pipelines"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -59,10 +59,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/MohammadvHossein/clean-data-ml"
-Repository = "https://github.com/MohammadvHossein/clean-data-ml"
-"Bug Tracker" = "https://github.com/MohammadvHossein/clean-data-ml/issues"
-Changelog = "https://github.com/MohammadvHossein/clean-data-ml/releases"
+Homepage = "https://github.com/MohammadvHossein/data-cleaner-ml"
+Repository = "https://github.com/MohammadvHossein/data-cleaner-ml"
+"Bug Tracker" = "https://github.com/MohammadvHossein/data-cleaner-ml/issues"
+Changelog = "https://github.com/MohammadvHossein/data-cleaner-ml/releases"
 
 [project.scripts]
 clean-data-ml = "clean_data_ml.__main__:main"

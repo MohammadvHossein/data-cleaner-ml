@@ -5,17 +5,17 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="clean_data_ml",
-    version="1.2.0",
+    version="1.2.1",
     description="Automatic data cleaning and standardization for ML pipelines",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Mohammad Hossein Habibpour",
     author_email="habibpour.programming@gmail.com",
-    url="https://github.com/MohammadvHossein/clean-data-ml",
+    url="https://github.com/MohammadvHossein/data-cleaner-ml",
     project_urls={
-        "Homepage": "https://github.com/MohammadvHossein/clean-data-ml",
-        "Repository": "https://github.com/MohammadvHossein/clean-data-ml",
-        "Bug Tracker": "https://github.com/MohammadvHossein/clean-data-ml/issues",
+        "Homepage": "https://github.com/MohammadvHossein/data-cleaner-ml",
+        "Repository": "https://github.com/MohammadvHossein/data-cleaner-ml",
+        "Bug Tracker": "https://github.com/MohammadvHossein/data-cleaner-ml/issues",
     },
     packages=find_packages(),
     install_requires=[

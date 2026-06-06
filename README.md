@@ -2,8 +2,8 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/clean-data-ml.svg)](https://pypi.org/project/clean-data-ml/)
 [![Python versions](https://img.shields.io/pypi/pyversions/clean-data-ml.svg)](https://pypi.org/project/clean-data-ml/)
-[![License](https://img.shields.io/pypi/l/clean-data-ml.svg)](https://github.com/MohammadvHossein/clean-data-ml/blob/main/LICENSE)
-[![CI](https://github.com/MohammadvHossein/clean-data-ml/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MohammadvHossein/clean-data-ml/actions/workflows/ci.yml)
+[![License](https://img.shields.io/pypi/l/clean-data-ml.svg)](https://github.com/MohammadvHossein/data-cleaner-ml/blob/main/LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/MohammadvHossein/data-cleaner-ml/ci.yml?branch=main)](https://github.com/MohammadvHossein/data-cleaner-ml/actions/workflows/ci.yml)
 
 **Automated data cleaning & standardization pipeline for ML projects.**
 
@@ -59,7 +59,7 @@ pip install clean-data-ml[all]         # all optional features
 For a development (editable) install from source:
 
 ```bash
-git clone https://github.com/MohammadvHossein/clean-data-ml.git
+git clone https://github.com/MohammadvHossein/data-cleaner-ml.git
 cd clean-data-ml
 pip install -e .
 pip install -e .[all]                # including all extras
